@@ -26,7 +26,7 @@ function App() {
 
 function App() {  
   return (
-   <Symbols />
+   <GameDisplay />
   )
 }
 

@@ -210,3 +210,9 @@ export function union(x : Iterable<any>, y : Iterable<any>){
 export function filter<T>(set : Iterable<T>, f : (a : T) => Boolean): Set<T>{
 	return  new Set(Array.from(set).filter(f));
 }
+
+export function normalize(v : number[], l : number){
+	var length = Math.sqrt(_.sum(v.map((x) => x*x)));
+	return v.map((x) => x/length * l);
+
+}
