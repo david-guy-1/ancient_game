@@ -10,6 +10,30 @@ export function drawLine(context, x0, y0, x1, y1, color = "black", width = 1) {
     context.lineTo(x1, y1);
     context.stroke();
 }
+
+
+export function drawPolygon(context, points_x , points_y, color='black', width=1, fill=false,transparency=1){
+	context.lineWidth = (width == undefined ? 1 : width);
+	context.beginPath();
+	context.moveTo(points_x[0], points_y[0]);
+    for(var i=1; i< points_x.length; i++){
+		context.lineTo(points_x[i], points_y[i]);
+	}
+	context.closePath();
+    if(fill){
+	
+		context.globalAlpha = transparency;	
+		context.fillStyle = (color == undefined ? "black" : color);
+		context.fill();
+		context.globalAlpha = 1;
+	} else {
+		context.strokeStyle = (color == undefined ? "black" : color);
+		context.stroke();
+	}
+	
+}
+
+
 export function drawImage(ctx, img, x, y, width=undefined, height=undefined) {
     if(typeof img == "string"){
         img = loadImage(img);
