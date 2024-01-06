@@ -1,15 +1,24 @@
-import React, { MouseEvent, useRef, useState } from "react";
+import React, { MouseEvent, useEffect, useRef, useState } from "react";
 import game from "./game.tsx";
 //@ts-ignore
 import * as c from "./canvasDrawing.js";
 import { levelData } from "./typedefs";
 import _ from "lodash";
+var interval = -1;
+
 function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Function }){
     var lastRendered = Date.now();
     var fps = 40;
     var mouseX = 0;
     var mouseY = 0;
     const [level, setLevel]  = useState(0);
+    
+    useEffect(function(){ 
+        console.log("called");
+        clearInterval(interval);
+        interval = setInterval(update, 1000/fps); 
+    }, [level])
+
     if(data[level] == undefined){
         return_fn(); 
         return <>Done!</>
@@ -49,12 +58,20 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
         }
         //draw the enemies
         for(var e of g.enemies){
+            if(e.type == "transforming"){
+                e = g.getTransformedEnemy(e, g.t);
+            }
             var image = e.image;
             if(e.type === "charger" && g.isChargerCharging(e, g.t) ){
                 image = e.charge_img;
             }
             var offset = e.img_offset;
-            c.drawImage(ctx, image, e.x + offset[0], e.y + offset[1]);
+            if(e.type != 'fire breath' && e.type != 'fire strike'){
+                c.drawImage(ctx, image, e.x + offset[0], e.y + offset[1]);
+            }
+            if(e.type == "fire breath"){
+
+            }
         }
 
         // draw the goals
@@ -65,7 +82,7 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
             }
             if(g.goal.mode == "chase orb" && g.progress.mode == "chase orb"){
                 var [img, offsetX, offsetY ] = g.goal.img;
-                c.drawImage(img, g.progress.x + offsetX, g.progress.y + offsetY)
+                c.drawImage(ctx, img, g.progress.x + offsetX, g.progress.y + offsetY)
                 c.drawCircle(ctx, g.progress.x, g.progress.y, g.goal.size, "green");
                 var s = g.progress.time + "/" + g.goal.time
                 c.drawText(ctx, s, 10, 40 )
@@ -114,7 +131,7 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
             c.drawImage(ctx, img, g.end_door[0] + offsetX , g.end_door[1] + offsetY  )
         }
     }
-    setInterval(update, 1000/fps); // FPS is here
+    
     return <>
         <canvas width={990} height={600} id="lowerCanvas" style={{position:"absolute", top:80, left:0, zIndex:0}}  onMouseMove={mouseMove}  ref={lowerCanvas}/>
     </>

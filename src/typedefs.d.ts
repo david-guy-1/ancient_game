@@ -12,7 +12,7 @@ type bullet = {name:string,
 }
 
 type bullet_fire = {
-    dir : "random" | "towards player", 
+    dir : "random" | "towards player" | ["fixed",number,number], 
     speed : number,
     img : string, 
     img_offset : [number, number], 
@@ -51,14 +51,15 @@ type charger = {
     charge_img :  string,
 } & base_enemy
 
+// for these two : spawned as soon as warning shows . 
+// does no damage until time - birthday > warning time
+// then, switch to damaging + img
 type fire_breaths = {
     type : "fire breath"
     warning_time : number,
     radius : number,
     warning_image : string,
-    blast_anim : string[]
     lifespan : number,
-    box : [number, number, number , number]
 } & base_enemy
 
 // wall : tlx, tly, brx, bry (relative to strike location)
@@ -68,11 +69,20 @@ type fire_strike = {
     shape : [number, number,number, number][]
     wall_duration : number,
     warning_image : string,
-    blast_anim : string[] 
     lifespan : number
+    radius : number
 } & base_enemy
 
-type enemy = normal_enemy | charger | fire_breaths | fire_strike
+// enemy is certain things depending on time. 
+// if behaviours is [t1, x1], [t2, x2], [t3, x3], ...
+// behaviour before t1 is x1, between t1 and t2 is x2, and so on. 
+type transforming_enemy =  {
+    type : "transforming"; 
+    modulus : number
+    behaviors : [number, enemy][]
+} & base_enemy 
+
+type enemy = normal_enemy | charger | fire_breaths | fire_strike | transforming_enemy
 
 // location rect : tlx, tly, brx, bry
 type spawner = {
@@ -90,7 +100,9 @@ type goalChase = {
     mode : "chase orb", 
     size : number, 
     img : [string, number, number], 
-    time : number
+    time : number,
+    waypoints : [number , number][]
+    speed : number
 } 
 type goalCollect  = {
     mode : "collect items",
@@ -121,7 +133,7 @@ type goalHit = {
 type goal = goalSurvive | goalCollect | goalChase | goalCollectF | goalHit
 
 type goalPSurvive= {mode : "survive" , time : number}
-type goalPChase = {mode : "chase orb", x : number, y : number, time : number}
+type goalPChase = {mode : "chase orb", x : number, y : number, time : number, waypoint : number}
 type goalPCollect = {mode : "collect items" , spawn_time : number, x : number, y : number, count : number}
 type goalPCollectF = {mode : "collect fixed items" , collected : boolean[], spawn_time : number}
 type goalPHit = {mode : "hit dummy" , x : number, y : number, count : number}

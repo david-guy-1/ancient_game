@@ -1,7 +1,7 @@
 
 import { dual_filter } from "./dual_filter.ts";
 import * as l from "./lines.ts"
-import { bullet, charger, enemy, goal, goalCollect, goalPChase, goalPCollect, goalPCollectF, goalPHit, goal_progress, levelData, move_mode, spawner, tickOutput, wall } from "./typedefs";
+import { bullet, charger, enemy, goal, goalCollect, goalPChase, goalPCollect, goalPCollectF, goalPHit, goal_progress, levelData, move_mode, spawner, tickOutput, transforming_enemy, wall } from "./typedefs";
 import _ from "lodash"
 class game{
     // other data here as well if necessary
@@ -37,9 +37,9 @@ class game{
             case "survive" : 
             return {mode : "survive", time : 0};
             case "chase orb" : 
-            return {mode : "chase orb", x : 0, y : 0, time : 0}
+            return {mode : "chase orb", x : 0, y : 0, time : 0, waypoint : 0}
             case "collect items" :
-            return {mode : "collect items", spawn_time : 0, x : 0, y : 0 , count : 0}
+            return {mode : "collect items", spawn_time : 0, x : 0, y : 0 , count : -1}
             case "collect fixed items" :
             if(items == undefined){
                 throw "fixed items with undefined items"
@@ -54,6 +54,29 @@ class game{
             default:
                 throw "unknown type of goal " + mode;
         }
+    }
+    getTransformedEnemy(e : transforming_enemy, t : number){
+        var modTime = t % e.modulus;
+        var this_beh : enemy | undefined = undefined;
+        for(var item of e.behaviors){
+            var [modt, b] = item; 
+            if(modt > modTime){
+                this_beh = b;
+                break;
+            }
+        }
+        if(this_beh == undefined){
+            throw "enemy with undefined behaviour : " + JSON.stringify(e) + " " + t;
+        }
+        // e.___ are all irrelevant since we use the chosen behaviour's one
+        for(var item of e.behaviors){
+            var [modt, b] = item;
+            b.x = this_beh.x;
+            b.y = this_beh.y;
+            b.name = this_beh.name;
+            b.birthday = this_beh.birthday;
+        }
+        return this_beh;
     }
 	// returns the point in that direction, and whether or not it goes into a wall
     pointInDirection(curX : number, curY : number, x : number, y : number, maxLength : number): [number, number,boolean]{
@@ -118,6 +141,11 @@ class game{
     calculateMoveDirection(mode : move_mode, enemyX : number, enemyY:number, enemySpeed :  number, playerX : number, playerY : number) : [number, number] {
         if(mode == "pursuit"){
             var vector = [playerX - enemyX, playerY - enemyY]
+            var length =  Math.sqrt(Math.pow(vector[0],2) + Math.pow(vector[1] , 2) ); 
+            enemySpeed = Math.min(length, enemySpeed);
+            if(enemySpeed == 0){
+                return [0,0]
+            }
             return l.normalize(vector,  enemySpeed) as [number, number] ; 
         }
         if(mode[0] == "random"){
@@ -128,13 +156,18 @@ class game{
         }
         if(mode[0] == "location_mover"){
             var vector =[mode[1] - enemyX, mode[2] - enemyY];
+            var length =  Math.sqrt(Math.pow(vector[0],2) + Math.pow(vector[1] , 2) ); 
+            enemySpeed = Math.min(length, enemySpeed);
+            if(enemySpeed == 0){
+                return [0,0]
+            }
             return l.normalize(vector, enemySpeed) as [number, number];
         }
         throw "Unknown enemy move mode "
     }
     tick(mouseX : number, mouseY : number ) : tickOutput{
        // console.log(JSON.stringify(this.enemies));
-        this.t++;
+        console.log(this.t);
         // move player
         this.moveToPoint(mouseX, mouseY, 10);
         // move bullets
@@ -152,21 +185,33 @@ class game{
             }
         }
         for(var e of this.enemies){
+            if(e.type == "transforming"){
+                e = this.getTransformedEnemy(e, this.t)
+            }
             switch(e.type) {
                 case "normal":
                     var [x,y] = this.calculateMoveDirection(e.mode, e.x, e.y , e.speed, this.playerX, this.playerY );
                     this.moveEnemy(e, x, y);
                     //shoot bullets
                     if(this.t % e.bullet.delay == e.birthday % e.bullet.delay) {
-                        console.log("boom!")
                         var speed: [number, number] = [0,0]
                         if(e.bullet.dir === "random"){
                             var angle = Math.random()*2*Math.PI;
                             speed = [Math.cos(angle) * e.bullet.speed, Math.sin(angle) * e.bullet.speed];
                         };
                         if(e.bullet.dir == "towards player"){
-                            speed = l.normalize([this.playerX - e.x, this.playerY-e.y], e.bullet.speed) as [number, number];
+                            try {  
+                                speed = l.normalize([this.playerX - e.x, this.playerY-e.y], e.bullet.speed) as [number, number];
+                            } catch(err){
+                                if(err == "normalizing a zero vector"){
+                                    speed = [0, e.bullet.speed];
+                                }
+                            }
                         }
+                        if(Array.isArray(e.bullet.dir) && e.bullet.dir[0] == "fixed"){
+                            speed = [e.bullet.dir[1], e.bullet.dir[2]] 
+                        }
+
                         this.bullets.push({"x" : e.x, "y" : e.y, speed : speed, radius : e.bullet.radius, img:e.bullet.img, img_offset : e.bullet.img_offset, name:e.bullet.bullet_name});
                     }
                 break;
@@ -182,11 +227,13 @@ class game{
                     }
                     break;
                 case "fire strike":
-                    var new_walls : [wall, number][]= [];
-                    for(var item of e.shape){
-                        new_walls.push([[item[0] + e.x, item[1] + e.y, item[2] + e.x, item[3] + e.y], this.t + e.wall_duration])
+                    if(this.t - e.birthday == e.warning_time){
+                        var new_walls : [wall, number][]= [];
+                        for(var item of e.shape){
+                            new_walls.push([[item[0] + e.x, item[1] + e.y, item[2] + e.x, item[3] + e.y], this.t + e.wall_duration])
+                        }
+                        this.temp_walls = this.temp_walls.concat(new_walls);
                     }
-                    this.temp_walls = this.temp_walls.concat(new_walls);
                     e.lifespan--;
                     if(e.lifespan <= 0){
                         e.name += "disabled";
@@ -195,7 +242,10 @@ class game{
         }
         // check collision with enemies 
         for(var e of this.enemies){
-            if(e.type == "normal" || e.type == "charger"){
+            if(e.type == "transforming"){
+                e = this.getTransformedEnemy(e, this.t)
+            }
+            if(e.type == "normal" || e.type == "charger" || ((e.type == "fire breath" || e.type == "fire strike") && this.t - e.birthday > e.warning_time)){
                 if(Math.pow(e.x - this.playerX,2) + Math.pow( e.y - this.playerY,2) < Math.pow(e.radius,2)){
                     this.collideEnemy(e);
                 }
@@ -215,6 +265,16 @@ class game{
                     var [tlx, tly, brx, bry] = s.location.rect;
                     e.x = Math.random() * (brx - tlx) + tlx;
                     e.y = Math.random() * (bry - tly) + tly;
+                }
+                if(e.type == "transforming"){
+                    for (var item2 of e.behaviors){
+                        var [n, beh] = item2;
+                        beh.x = e.x;
+                        beh.y = e.y;
+                        beh.birthday = e.birthday;
+                        beh.name = e.name;
+                        
+                    }
                 }
                 this.enemies.push(e);
             }
@@ -253,14 +313,38 @@ class game{
                     if(d < Math.pow(this.goal.size,2)) { 
                         this.progress.time ++; 
                     }
+                    if(this.t == 0){
+                        this.progress.x = this.goal.waypoints[0][0];
+                        this.progress.y = this.goal.waypoints[0][1];
+                    }
+                    // move towards the next waypoint
+                    var next_index  = this.progress.waypoint + 1 ;
+                    if(next_index == this.goal.waypoints.length){
+                        next_index = 0;
+                    }
+                    var next_waypoint = this.goal.waypoints[next_index]
+                    var v = [next_waypoint[0]-this.progress.x  ,next_waypoint[1] - this.progress.y ]
+                    var length = Math.sqrt(Math.pow(v[0] ,2 ) + Math.pow(v[1], 2));
+                    if(length < this.goal.speed) {
+                        this.progress.waypoint++;
+                        if(this.progress.waypoint == this.goal.waypoints.length){
+                            this.progress.waypoint = 0;
+                        }
+                    } else {
+                        var [dx, dy] = l.normalize(v, this.goal.speed)
+                        this.progress.x += dx; 
+                        this.progress.y += dy;
+                    }
+
                     if(this.progress.time >= this.goal.time){
                         this.progress = "completed";
                     }
+                    
                 break;
                 case "collect items":
                     this.progress = this.progress as unknown as  goalPCollect;
                     var d = Math.pow(this.playerX - this.progress.x, 2) + Math.pow(this.playerY - this.progress.y, 2);
-                    if(d < Math.pow(this.goal.size,2) && this.t > this.progress.spawn_time) {
+                    if(this.t == 0 || (d < Math.pow(this.goal.size,2) && this.t > this.progress.spawn_time)) {
                         this.progress.count ++; 
                         this.progress.spawn_time = this.t + this.goal.spawn_delay;
                         var [tlx, tly, brx, bry] = this.goal.spawn_rect
@@ -290,25 +374,30 @@ class game{
             }
         }   
         if(this.progress == "completed" && this.end_door == undefined){
-            this.end_door = [Math.random() * 600 + 200, Math.random() * 600 + 100 ];
+            this.end_door = [Math.random() * 600 + 200, Math.random() * 400 + 100 ];
         }
         var win = false;
         if(this.end_door !== undefined) {
             var d = Math.pow(this.playerX - this.end_door[0] , 2) + Math.pow(this.playerY - this.end_door[1] , 2) 
-            if(d < 64){
+            if(d < 400){
                 win = true; ;
             }
         }
+        // "special" effects goes here : 
+
         // filter out things
         
         var [stayed_bullets, destroyed_bullets] = dual_filter(this.bullets, b => b.x > 0 && b.x < 1000 && b.y > 0 && b.y < 1000 && b.name.indexOf("disabled") === -1);
-        var [stayed_enemies, destroyed_enemies] = dual_filter(this.enemies,x => x.name.indexOf("disabled") === -1);
+        // for a transforming enemy , if any of its behaviours are disabled, the entire thing is disabled.
+        var [stayed_enemies, destroyed_enemies] = dual_filter(this.enemies,x => x.name.indexOf("disabled") === -1 || (x.type=="transforming" && _.every(x.behaviors, t => t[1].name.indexOf("disabled") === -1)));
+
         var [stayed_spawners, destroyed_spawners] = dual_filter(this.spawners, x => x.name.indexOf("disabled") === -1);
         var [stayed_walls, destroyed_walls] = dual_filter(this.temp_walls, (x) => x[1] < this.t) ;
         this.bullets = stayed_bullets;
         this.enemies = stayed_enemies;
         this.spawners = stayed_spawners;
         this.temp_walls =stayed_walls;
+        this.t++;
         return {"bullets": destroyed_bullets, "enemies" : destroyed_enemies, "spawners" : destroyed_spawners, "walls": destroyed_walls, "win":win}
         
     }

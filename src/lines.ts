@@ -213,6 +213,9 @@ export function filter<T>(set : Iterable<T>, f : (a : T) => Boolean): Set<T>{
 
 export function normalize(v : number[], l : number){
 	var length = Math.sqrt(_.sum(v.map((x) => x*x)));
+	if(length == 0) { 
+		throw "normalizing a zero vector"
+	}
 	return v.map((x) => x/length * l);
 
 }
