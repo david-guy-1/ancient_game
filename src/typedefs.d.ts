@@ -33,7 +33,7 @@ type base_enemy = {
 }
 type normal_enemy   = {
     type : "normal",
-    bullet : bullet_fire,
+    bullet ?: bullet_fire,
     speed :number,
     mode : move_mode,
     radius : number
@@ -132,7 +132,7 @@ type goalHit = {
 
 type goal = goalSurvive | goalCollect | goalChase | goalCollectF | goalHit
 
-type goalPSurvive= {mode : "survive" , time : number}
+type goalPSurvive= {mode : "survive" }
 type goalPChase = {mode : "chase orb", x : number, y : number, time : number, waypoint : number}
 type goalPCollect = {mode : "collect items" , spawn_time : number, x : number, y : number, count : number}
 type goalPCollectF = {mode : "collect fixed items" , collected : boolean[], spawn_time : number}
@@ -157,4 +157,10 @@ type tickOutput = {
     spawners : spawner[],
     walls : [wall, number][]
     win : boolean;
+}
+
+type player= {
+    invincibility : number,
+    speed : number,
+    hp : number
 }

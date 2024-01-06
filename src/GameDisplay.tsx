@@ -2,34 +2,39 @@ import React, { MouseEvent, useEffect, useRef, useState } from "react";
 import game from "./game.tsx";
 //@ts-ignore
 import * as c from "./canvasDrawing.js";
-import { levelData } from "./typedefs";
+import { levelData, player} from "./typedefs";
 import _ from "lodash";
 var interval = -1;
 
-function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Function }){
+function GameDisplay({data, return_fn, player} : {data : levelData[], return_fn : Function, player : player }){
     var lastRendered = Date.now();
     var fps = 40;
     var mouseX = 0;
     var mouseY = 0;
     const [level, setLevel]  = useState(0);
-    
+    const [lose, setLose]  = useState(false);
+    const lowerCanvas = useRef<HTMLCanvasElement>(null);
+
     useEffect(function(){ 
         console.log("called");
         clearInterval(interval);
         interval = setInterval(update, 1000/fps); 
     }, [level])
 
-    if(data[level] == undefined){
-        return_fn(); 
-        return <>Done!</>
+    if(lose){
+        clearInterval(interval);
+        return <>You lose! <button onClick={() => return_fn(false)}> Return</button></>
     }
-    var g : game = new game(data[level]);
+    if(data[level] == undefined){
+        clearInterval(interval);
+        return <>You win! <button onClick={() => return_fn(true)}> Return</button></>
+    }
+    var g : game = new game(data[level], player);
 	function mouseMove(e : MouseEvent){
 		mouseX = e.nativeEvent.offsetX;
 		mouseY = e.nativeEvent.offsetY;
 	} 
-    const lowerCanvas = useRef<HTMLCanvasElement>(null);
-    var playerImg : string = "images/player.png"; 
+    
     
     function update(){
         if(lowerCanvas.current === null){
@@ -49,9 +54,7 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
         for(var wall of g.walls){
             c.drawLine(ctx, wall[0], wall[1], wall[2], wall[3]);
         }
-        //draw the player
-        c.drawImage(ctx, playerImg, g.playerX-15, g.playerY-15);
-        
+
         // draw the bullets
         for(var b of g.bullets){
             c.drawImage(ctx, b.img, b.x+b.img_offset[0], b.y+b.img_offset[1]);
@@ -69,15 +72,19 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
             if(e.type != 'fire breath' && e.type != 'fire strike'){
                 c.drawImage(ctx, image, e.x + offset[0], e.y + offset[1]);
             }
-            if(e.type == "fire breath"){
-
+            if(e.type == "fire breath" || e.type == "fire strike"){
+                if( g.t - e.birthday > e.warning_time){
+                    c.drawImage(ctx, e.image, e.x + offset[0],e.y + offset[1]); 
+                }  else {
+                    c.drawImage(ctx, e.warning_image, e.x + offset[0],e.y + offset[1]); 
+                }
             }
         }
 
         // draw the goals
         if(g.progress !== "completed") {
             if(g.goal.mode == "survive" && g.progress.mode == "survive"){
-                var s = g.progress.time + "/" + g.goal.time
+                var s = "Survive " + g.t + "/" + g.goal.time
                 c.drawText(ctx, s, 10, 40 )
             }
             if(g.goal.mode == "chase orb" && g.progress.mode == "chase orb"){
@@ -85,7 +92,7 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
                 c.drawImage(ctx, img, g.progress.x + offsetX, g.progress.y + offsetY)
                 c.drawCircle(ctx, g.progress.x, g.progress.y, g.goal.size, "green");
                 var s = g.progress.time + "/" + g.goal.time
-                c.drawText(ctx, s, 10, 40 )
+                c.drawText(ctx, "Stay in the circle " +s, 10, 40 )
             }
             if(g.goal.mode == "collect items" && g.progress.mode == "collect items"){
                 if(g.t >= g.progress.spawn_time){
@@ -93,7 +100,7 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
                     c.drawImage(ctx, img, g.progress.x + offsetX, g.progress.y + offsetY);
                 }
                 var s = g.progress.count + "/" + g.goal.amount
-                c.drawText(ctx, s, 10, 40 )
+                c.drawText(ctx,"Collect items "+ s, 10, 40 )
             }            
             if(g.goal.mode == "collect fixed items" && g.progress.mode == "collect fixed items"){
                 var allSoFar = true; 
@@ -117,19 +124,35 @@ function GameDisplay({data, return_fn} : {data : levelData[], return_fn : Functi
                     }
                 }
                 var s = _.countBy(g.progress.collected).true + "/" + g.goal.locations.length
-                c.drawText(ctx, s, 10, 40 )
+                c.drawText(ctx,"Collect items "+ s, 10, 40 )
             }            
             if(g.goal.mode == "hit dummy" && g.progress.mode == "hit dummy"){
                 var [img, offsetX, offsetY] = g.goal.img;
                 c.drawImage(ctx, img, g.goal.x+offsetX,  g.goal.y + offsetY);
                 var s = g.progress.count + "/" + g.goal.amount
-                c.drawText(ctx, s, 10, 40 )
+                c.drawText(ctx, "Make enemy bullets hit the object "+s, 10, 40 )
             }
+        } else { 
+            c.drawText(ctx, "Enter the door!", 10, 40 )
         }
+        //draw the end door 
         if(g.end_door !== undefined){
             var [img, offsetX, offsetY] = g.door_img;
             c.drawImage(ctx, img, g.end_door[0] + offsetX , g.end_door[1] + offsetY  )
         }
+        // draw the player and hp bar
+        var isInv = g.t - g.last_hit < g.p.invincibility
+        var playerImg : string = "images/player.png"; 
+        var playerInvImg : string = "images/playerInv.png"; 
+        c.drawImage(ctx, isInv ? playerInvImg : playerImg, g.playerX-15, g.playerY-15);
+
+        c.drawText(ctx, "HP " + (g.p.hp  - g.hits) +"/" + g.p.hp, 500, 40);
+
+        if(g.p.hp <= g.hits){
+            setLose(true);
+        }
+
+                
     }
     
     return <>

@@ -5,7 +5,8 @@ import './App.css'
 import GameDisplay from "./GameDisplay.tsx"
 import Symbols from './Symbols.tsx'
 import { levelData } from './typedefs'
-import level from "./build_level.ts"
+import generateGame from "./build_level.ts"
+import LevelSelector from './LevelSelector.tsx'
 /*
 if(window.set == undefined){
   window.set = 1;
@@ -27,17 +28,32 @@ function App() {
 const fps = 40; 
 function App() {  
 
-  var levelData: levelData[] = level;
+  
+  const [state, setState] = useState("select");
+  const [level, setLevel] = useState<levelData[] | undefined>(undefined);
+  const [levels, symbols] = generateGame(); 
 
-  const [state, setState] = useState("level");
+  function startGame(e: [string, string]){
+    var index = parseInt(e[0])*5 + parseInt(e[1]); 
+    setLevel(levels[index]);
+    setState("level");
+  }
+  
   switch(state){
     case "level":
+      if(level == undefined){
+        throw "Level state but undefined level";
+      }
       return (
-        <GameDisplay  data={levelData} return_fn={() => setState("win")}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:20, speed:10, hp:5}}/>
        )
     case "win":
         return <>You win! <button onClick={() => setState("level")}> Play again </button></>
+    case "lose":
+      return <>You lose! <button onClick={() => setState("level")}> Play again </button></>
+    case "select":
+      return <LevelSelector levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} />
   }
 }
 
-export default App
+export default App;

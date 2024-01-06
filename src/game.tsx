@@ -1,7 +1,7 @@
 
 import { dual_filter } from "./dual_filter.ts";
 import * as l from "./lines.ts"
-import { bullet, charger, enemy, goal, goalCollect, goalPChase, goalPCollect, goalPCollectF, goalPHit, goal_progress, levelData, move_mode, spawner, tickOutput, transforming_enemy, wall } from "./typedefs";
+import { bullet, charger, enemy, goal, goalCollect, goalPChase, goalPCollect, goalPCollectF, goalPHit, goal_progress, levelData, move_mode, player, spawner, tickOutput, transforming_enemy, wall } from "./typedefs";
 import _ from "lodash"
 class game{
     // other data here as well if necessary
@@ -18,7 +18,9 @@ class game{
     end_door : [number, number] | undefined
     door_img : [string, number , number]
     last_hit : number
-    constructor( d : levelData){
+    hits : number
+    p : player
+    constructor( d : levelData, p : player){
         this.playerX = d.player_x;
         this.playerY = d.player_y;
         this.walls = d.walls;
@@ -28,14 +30,16 @@ class game{
         this.goal = d.goal;
         this.progress = this.blankGoalProgress(d.goal.mode, d.goal.mode === "collect fixed items" ? d.goal.locations.length : undefined);
         this.end_door = undefined;
-        this.last_hit = 0;
-        this.door_img = d.door_img
+        this.last_hit = -Infinity;
+        this.door_img = d.door_img;
+        this.hits = 0
+        this.p = p;
         
     }
     blankGoalProgress(mode : string, items : number | undefined  = undefined) : goal_progress{
         switch(mode){
             case "survive" : 
-            return {mode : "survive", time : 0};
+            return {mode : "survive"};
             case "chase orb" : 
             return {mode : "chase orb", x : 0, y : 0, time : 0, waypoint : 0}
             case "collect items" :
@@ -128,10 +132,17 @@ class game{
 		return this.move(x - this.playerX, y -this.playerY, maxLength);
 	}
     collide(bullets: bullet){
-        bullets.name += "disabled";
+        if(this.t - this.last_hit > this.p.invincibility) { 
+            bullets.name += "disabled";
+            this.hits += 1;
+            this.last_hit = this.t
+        }
     }
     collideEnemy (e : enemy){
-        ;
+        if(this.t - this.last_hit > this.p.invincibility) { 
+            this.hits += 1
+            this.last_hit = this.t
+        }
     }
     hitDummy(b : bullet){
         b.name += "disabled";
@@ -150,7 +161,7 @@ class game{
         }
         if(mode[0] == "random"){
             var d = mode[1];
-            d += (Math.random() * 2*mode[2] - mode[2] )+ d;
+            d += (Math.random() * 2*mode[2] - mode[2] );
             mode[1] = d; // mutates enemy
             return [Math.cos(d) * enemySpeed, Math.sin(d) * enemySpeed]
         }
@@ -167,9 +178,9 @@ class game{
     }
     tick(mouseX : number, mouseY : number ) : tickOutput{
        // console.log(JSON.stringify(this.enemies));
-        console.log(this.t);
+        //console.log(this.t);
         // move player
-        this.moveToPoint(mouseX, mouseY, 10);
+        this.moveToPoint(mouseX, mouseY, this.p.speed);
         // move bullets
         for(var b of this.bullets){
             b.x += b.speed[0] ;
@@ -193,7 +204,7 @@ class game{
                     var [x,y] = this.calculateMoveDirection(e.mode, e.x, e.y , e.speed, this.playerX, this.playerY );
                     this.moveEnemy(e, x, y);
                     //shoot bullets
-                    if(this.t % e.bullet.delay == e.birthday % e.bullet.delay) {
+                    if(e.bullet && this.t % e.bullet.delay == e.birthday % e.bullet.delay) {
                         var speed: [number, number] = [0,0]
                         if(e.bullet.dir === "random"){
                             var angle = Math.random()*2*Math.PI;
@@ -324,8 +335,8 @@ class game{
                     }
                     var next_waypoint = this.goal.waypoints[next_index]
                     var v = [next_waypoint[0]-this.progress.x  ,next_waypoint[1] - this.progress.y ]
-                    var length = Math.sqrt(Math.pow(v[0] ,2 ) + Math.pow(v[1], 2));
-                    if(length < this.goal.speed) {
+                    var length = Math.pow(v[0] ,2 ) + Math.pow(v[1], 2);
+                    if(length < Math.pow(this.goal.speed,2)) {
                         this.progress.waypoint++;
                         if(this.progress.waypoint == this.goal.waypoints.length){
                             this.progress.waypoint = 0;
@@ -359,7 +370,7 @@ class game{
                     this.progress = this.progress as unknown as  goalPHit;
                     for(var b of this.bullets){
                         var d = Math.pow(b.x - this.goal.x , 2) +  Math.pow(b.y - this.goal.y , 2);
-                        if(d < b.radius + this.goal.size ){
+                        if(d <  Math.pow(this.goal.size,2) ){
                             this.hitDummy(b);
                         }
                     }

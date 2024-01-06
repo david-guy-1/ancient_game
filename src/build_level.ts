@@ -1,7 +1,18 @@
-import { bullet, bullet_fire, enemy, levelData, normal_enemy, spawner } from "./typedefs";
+import { bullet, bullet_fire, enemy, fire_breaths, levelData, normal_enemy, spawner } from "./typedefs";
 function clone(x : any){
     return JSON.parse(JSON.stringify(x));
 }
+
+/*
+
+x:0,
+y:0,
+birthday:0,
+name: "",
+image : "images/",
+img_offset : [-15, -15]
+
+*/
 
 var b1 : bullet_fire = {
     dir : "towards player",
@@ -39,7 +50,7 @@ var shooter : enemy = {
     x: 200,
     y: 400,
     image : "images/turret.png",
-    speed : 1,
+    speed : 0,
     radius : -1,
     mode : "pursuit",
     img_offset : [-15,-15],
@@ -92,11 +103,11 @@ var transforming_enemy : enemy = {
     type:"transforming",
     modulus : 400,
     behaviors : [[200, clone(shooter) as enemy], [400, clone(chaser) as enemy]],
+    name:"shooter and chaser",
     x : 0,
     y : 0,
     birthday : 0,
-    name:"shooter and chaser",
-    img_offset : [-15,-15],
+    img_offset : [0,0],
     image : ""
 }
 
@@ -131,6 +142,122 @@ var level2 : levelData = {
     door_img : ["images/door.png",-15,-15],
 }
 
+var random_pursue_enemy : enemy  = {
+    type:"transforming",
+    modulus:60,
+    behaviors : [[30, {
+        type : "normal",
+        x:0,
+        y:0,
+        birthday:0,
+        name: "",
+        image : "images/blob.png",
+        img_offset : [-15, -15], 
+        mode:["random", 0, 1], 
+        speed : 5, 
+        radius : 15
+    }],
+    [60, {
+        type : "normal",
+        x:0,
+        y:0,
+        birthday:0,
+        name: "",
+        image : "images/blob.png",
+        img_offset : [-15, -15], 
+        mode:"pursuit", 
+        speed : 7, 
+        radius : 15
+    }]
+     ], 
+    name:"random pursue",
+    x:0,
+    y:0,
+    birthday:0,
+    image : "images/",
+    img_offset : [-15, -15]
+}
+var random_pursue_enemy_left = clone(random_pursue_enemy);
+random_pursue_enemy_left.behaviors[0][1].mode[1] = Math.PI;
+
+var random_pursue_spawner  : spawner = {
+    enemy : random_pursue_enemy,
+    interval : 60,
+    start_time : 0,
+    location : {mode : "random", rect : [100, 100, 150, 600]},
+    name : "rp spawner"
+}
+var random_pursue_spawner_2 : spawner = clone(random_pursue_spawner) as spawner
+
+random_pursue_spawner_2.location = {mode : "random", rect : [700, 100, 750, 600]}
+random_pursue_spawner_2.start_time = 30;
+random_pursue_spawner_2.enemy = random_pursue_enemy_left;
+
+var random_pursue_level : levelData = {
+    goal : {mode:"survive", time : 400},
+    walls : [],
+    enemies : [],
+    spawners : [random_pursue_spawner, random_pursue_spawner_2],
+    player_x : 400,
+    player_y :400, 
+    door_img : ["images/door.png",-15,-15]
+}
+
+var fast_fire_spawner = clone(fire_spawner) as spawner;
+fast_fire_spawner.interval = 40;
+fast_fire_spawner.enemy = clone(fast_fire_spawner.enemy) as fire_breaths ;
+fast_fire_spawner.enemy.radius = 120; 
+fast_fire_spawner.enemy.image = "images/big_fire.png";
+fast_fire_spawner.enemy.img_offset = [-120, -120];
 
 
-export default [level, level2] 
+var raining_fire_level : levelData = { 
+    goal : {mode : "collect items", amount : 10, img : ["images/coin.png", -15, -15], spawn_delay : 0, spawn_rect : [0,0,600,600], size:15 },
+    spawners : [fast_fire_spawner],
+    walls : [],
+    "enemies" : [],
+    player_x : 400,
+    player_y :400, 
+    door_img : ["images/door.png",-15,-15]    
+}
+var lst : enemy[] = []
+
+for(var i=0 ; i < 4; i ++){
+    var e = clone(shooter) as normal_enemy;
+    (e.bullet as bullet_fire).dir = "random";
+    e.x =  i % 2==0 ? 200 : 600;
+    e.y =  i < 2 ? 200 : 500;
+    lst.push(e);
+}
+
+e = clone(shooter) as normal_enemy;
+e.x = 400; e.y = 300;
+(e.bullet as bullet_fire).delay = 40
+lst.push(e);
+lst.push(clone(chaser));
+lst.push(clone(chaser));
+lst[lst.length-1].x = 600;
+var shooter_level : levelData = {
+    goal : {mode : "hit dummy", amount : 20,img : ["images/dummy.png", -20, -20], x:200, y:400 , size:20},
+    enemies : lst,
+    walls : [],
+    spawners : [],
+    player_x : 400,
+    player_y :400, 
+    door_img : ["images/door.png",-15,-15]    
+
+}
+
+
+function generateGame(seed ?: string ): [levelData[][], string[][], Record<string, string> ]{
+    var lst = [];
+    var strings = []
+    for(var i = 0 ; i < 25; i ++){
+        lst.push([clone(raining_fire_level), clone(random_pursue_level)]);
+        strings.push(["abcd", "efgh"]);
+    } 
+    return [lst, strings, {"abc" : "abc" , "def":"def"}];
+}
+
+export default generateGame
+
