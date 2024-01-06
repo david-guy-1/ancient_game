@@ -1,6 +1,8 @@
 
+import { dual_filter } from "./dual_filter.ts";
 import * as l from "./lines.ts"
-import { bullet, charger, enemy, levelData, move_mode, spawner, wall } from "./typedefs";
+import { bullet, charger, enemy, goal, goalCollect, goalPChase, goalPCollect, goalPCollectF, goalPHit, goal_progress, levelData, move_mode, spawner, tickOutput, wall } from "./typedefs";
+import _ from "lodash"
 class game{
     // other data here as well if necessary
     playerX : number;
@@ -11,6 +13,11 @@ class game{
     enemies : enemy[] = [];
     spawners : spawner[] = [];
     t : number  = 0;
+    goal : goal;
+    progress : goal_progress | "completed";
+    end_door : [number, number] | undefined
+    door_img : [string, number , number]
+    last_hit : number
     constructor( d : levelData){
         this.playerX = d.player_x;
         this.playerY = d.player_y;
@@ -18,6 +25,35 @@ class game{
         this.enemies = d.enemies;
         this.spawners = d.spawners;
         this.temp_walls = [];
+        this.goal = d.goal;
+        this.progress = this.blankGoalProgress(d.goal.mode, d.goal.mode === "collect fixed items" ? d.goal.locations.length : undefined);
+        this.end_door = undefined;
+        this.last_hit = 0;
+        this.door_img = d.door_img
+        
+    }
+    blankGoalProgress(mode : string, items : number | undefined  = undefined) : goal_progress{
+        switch(mode){
+            case "survive" : 
+            return {mode : "survive", time : 0};
+            case "chase orb" : 
+            return {mode : "chase orb", x : 0, y : 0, time : 0}
+            case "collect items" :
+            return {mode : "collect items", spawn_time : 0, x : 0, y : 0 , count : 0}
+            case "collect fixed items" :
+            if(items == undefined){
+                throw "fixed items with undefined items"
+            }
+            var item_lst : boolean[] = [];
+            for(var i=0; i < items ; i++){
+                item_lst.push(false);
+            }
+            return {mode: "collect fixed items", collected : item_lst, spawn_time : 0}
+            case "hit dummy":
+                return {mode : "hit dummy", x : 0, y : 0, count : 0}
+            default:
+                throw "unknown type of goal " + mode;
+        }
     }
 	// returns the point in that direction, and whether or not it goes into a wall
     pointInDirection(curX : number, curY : number, x : number, y : number, maxLength : number): [number, number,boolean]{
@@ -74,7 +110,12 @@ class game{
     collideEnemy (e : enemy){
         ;
     }
-    calculateMoveDIrection(mode : move_mode, enemyX : number, enemyY:number, enemySpeed :  number, playerX : number, playerY : number) : [number, number] {
+    hitDummy(b : bullet){
+        b.name += "disabled";
+        this.progress = this.progress as any as goalPHit ;
+        this.progress.count += 1;
+    }
+    calculateMoveDirection(mode : move_mode, enemyX : number, enemyY:number, enemySpeed :  number, playerX : number, playerY : number) : [number, number] {
         if(mode == "pursuit"){
             var vector = [playerX - enemyX, playerY - enemyY]
             return l.normalize(vector,  enemySpeed) as [number, number] ; 
@@ -91,7 +132,7 @@ class game{
         }
         throw "Unknown enemy move mode "
     }
-    tick(mouseX : number, mouseY : number ){
+    tick(mouseX : number, mouseY : number ) : tickOutput{
        // console.log(JSON.stringify(this.enemies));
         this.t++;
         // move player
@@ -101,7 +142,7 @@ class game{
             b.x += b.speed[0] ;
             b.y += b.speed[1] ;
         }
-        this.bullets = this.bullets.filter(b => b.x > 0 && b.x < 1000 && b.y > 0 && b.y < 1000 && b.name.indexOf("disabled") === -1);
+
 
         // check collisions
         for(var b of this.bullets){
@@ -113,7 +154,7 @@ class game{
         for(var e of this.enemies){
             switch(e.type) {
                 case "normal":
-                    var [x,y] = this.calculateMoveDIrection(e.mode, e.x, e.y , e.speed, this.playerX, this.playerY );
+                    var [x,y] = this.calculateMoveDirection(e.mode, e.x, e.y , e.speed, this.playerX, this.playerY );
                     this.moveEnemy(e, x, y);
                     //shoot bullets
                     if(this.t % e.bullet.delay == e.birthday % e.bullet.delay) {
@@ -131,7 +172,7 @@ class game{
                 break;
                 case "charger":
                     var charging = this.isChargerCharging(e, this.t);
-                    var [x,y] = this.calculateMoveDIrection(e.mode, e.x, e.y , charging ? e.charge_speed :  e.speed, this.playerX, this.playerY );
+                    var [x,y] = this.calculateMoveDirection(e.mode, e.x, e.y , charging ? e.charge_speed :  e.speed, this.playerX, this.playerY );
                     this.moveEnemy(e, x, y);  
                     break
                 case "fire breath":
@@ -179,6 +220,97 @@ class game{
             }
             
         }
+        if(this.progress !== "completed") { 
+            // process goal 
+            switch(this.goal.mode){    
+                case "collect fixed items":
+                    this.progress = this.progress as unknown as  goalPCollectF
+                    var locations :[number, number, number][]  = [];   
+                    for(var i = 0; i < this.goal.locations.length; i++){
+                        if(this.progress.collected[i] == false){
+                            locations.push(this.goal.locations[i].concat([i]) as [number, number, number]);
+                            if(this.goal.sequential) {
+                                break;
+                            }
+                        }
+                    }
+                    // list all stuff to collect 
+                    for(var [x,y,index] of locations) {
+                        if(Math.pow(x - this.playerX, 2) + Math.pow (y - this.playerY, 2) < Math.pow(this.goal.size,2) && this.t > this.progress.spawn_time){
+                            // collected it!
+                            this.progress.collected[index] = true; 
+                            this.progress.spawn_time = this.t + this.goal.spawn_delay; 
+                        }
+                    }
+                    // check completion
+                    if(_.every(this.progress.collected)){
+                        this.progress = "completed"; 
+                    }
+                break;
+                case "chase orb":
+                    this.progress = this.progress as unknown as  goalPChase;
+                    var d = Math.pow(this.playerX - this.progress.x, 2) + Math.pow(this.playerY - this.progress.y, 2);
+                    if(d < Math.pow(this.goal.size,2)) { 
+                        this.progress.time ++; 
+                    }
+                    if(this.progress.time >= this.goal.time){
+                        this.progress = "completed";
+                    }
+                break;
+                case "collect items":
+                    this.progress = this.progress as unknown as  goalPCollect;
+                    var d = Math.pow(this.playerX - this.progress.x, 2) + Math.pow(this.playerY - this.progress.y, 2);
+                    if(d < Math.pow(this.goal.size,2) && this.t > this.progress.spawn_time) {
+                        this.progress.count ++; 
+                        this.progress.spawn_time = this.t + this.goal.spawn_delay;
+                        var [tlx, tly, brx, bry] = this.goal.spawn_rect
+                        this.progress.x = Math.random() * (brx-tlx) + tlx
+                        this.progress.y = Math.random() * (bry-tly) + tly
+                    }
+                    if(this.progress.count >= this.goal.amount){
+                        this.progress = "completed";
+                    }
+                break;
+                case "hit dummy":
+                    this.progress = this.progress as unknown as  goalPHit;
+                    for(var b of this.bullets){
+                        var d = Math.pow(b.x - this.goal.x , 2) +  Math.pow(b.y - this.goal.y , 2);
+                        if(d < b.radius + this.goal.size ){
+                            this.hitDummy(b);
+                        }
+                    }
+                    if(this.progress.count >= this.goal.amount){
+                        this.progress = "completed";
+                    }
+                break;
+                case "survive":
+                    if(this.t > this.goal.time){
+                        this.progress = "completed";
+                    }
+            }
+        }   
+        if(this.progress == "completed" && this.end_door == undefined){
+            this.end_door = [Math.random() * 600 + 200, Math.random() * 600 + 100 ];
+        }
+        var win = false;
+        if(this.end_door !== undefined) {
+            var d = Math.pow(this.playerX - this.end_door[0] , 2) + Math.pow(this.playerY - this.end_door[1] , 2) 
+            if(d < 64){
+                win = true; ;
+            }
+        }
+        // filter out things
+        
+        var [stayed_bullets, destroyed_bullets] = dual_filter(this.bullets, b => b.x > 0 && b.x < 1000 && b.y > 0 && b.y < 1000 && b.name.indexOf("disabled") === -1);
+        var [stayed_enemies, destroyed_enemies] = dual_filter(this.enemies,x => x.name.indexOf("disabled") === -1);
+        var [stayed_spawners, destroyed_spawners] = dual_filter(this.spawners, x => x.name.indexOf("disabled") === -1);
+        var [stayed_walls, destroyed_walls] = dual_filter(this.temp_walls, (x) => x[1] < this.t) ;
+        this.bullets = stayed_bullets;
+        this.enemies = stayed_enemies;
+        this.spawners = stayed_spawners;
+        this.temp_walls =stayed_walls;
+        return {"bullets": destroyed_bullets, "enemies" : destroyed_enemies, "spawners" : destroyed_spawners, "walls": destroyed_walls, "win":win}
+        
     }
 }
 

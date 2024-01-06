@@ -77,7 +77,7 @@ export function drawImageStr(ctx, string, x, y, width=undefined, height=undefine
 
 
 }
-//draws a circle with the given coordinates and color
+//draws a circle with the given coordinates (as center) and color
 export function drawCircle(context, x, y, r, color = "black", width = 1) {
     //////console.log(x,y,r)
     context.strokeStyle = (color == undefined ? "black" : color);
@@ -110,7 +110,7 @@ export  function drawRectangle2(context, tlx, tly, width, height, color = "black
 	
 }
 
-
+// bottom left corner of text 
 export function drawText(context, text_, x, y, width =undefined, color = "black", size = 20) {
     context.font = size + "px Arial";
 	if(width == undefined){

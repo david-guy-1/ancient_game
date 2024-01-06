@@ -84,11 +84,65 @@ type spawner = {
 
 }
 
+type goalSurvive = {mode : "survive" , time : number} 
+// numbers are offsets 
+type goalChase = {
+    mode : "chase orb", 
+    size : number, 
+    img : [string, number, number], 
+    time : number
+} 
+type goalCollect  = {
+    mode : "collect items",
+    amount : number,
+    img : [string, number, number],
+    spawn_delay : number,
+    spawn_rect : [number,number,number,number]
+    size : number
+}
+type goalCollectF = {
+    mode : "collect fixed items",
+    locations : [number, number][],
+    sequential : boolean,
+    spawn_delay : number, 
+    img : [string, number, number], 
+    collected_img ?: [string, number, number]
+    size : number
+}
+type goalHit = {
+    mode : "hit dummy" , 
+    img : [string, number, number],
+    x : number,
+    y : number, 
+    amount : number,
+    size : number
+}
+
+type goal = goalSurvive | goalCollect | goalChase | goalCollectF | goalHit
+
+type goalPSurvive= {mode : "survive" , time : number}
+type goalPChase = {mode : "chase orb", x : number, y : number, time : number}
+type goalPCollect = {mode : "collect items" , spawn_time : number, x : number, y : number, count : number}
+type goalPCollectF = {mode : "collect fixed items" , collected : boolean[], spawn_time : number}
+type goalPHit = {mode : "hit dummy" , x : number, y : number, count : number}
+
+type goal_progress =goalPSurvive|goalPChase|goalPCollect|goalPCollectF|goalPHit
+
+
 type levelData = {
     spawners: spawner[] ,
     walls : wall[], 
     enemies : enemy[],
     player_x : number,
     player_y : number
+    goal : goal,
+    door_img : [string, number, number]
+}
 
+type tickOutput = {
+    bullets : bullet[],
+    enemies : enemy[],
+    spawners : spawner[],
+    walls : [wall, number][]
+    win : boolean;
 }
