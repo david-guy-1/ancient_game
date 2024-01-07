@@ -120,7 +120,7 @@ class game{
 		return true;
 	}
     isChargerCharging(e : charger, t : number) : boolean{
-        return t % e.charge_delay + e.charge_duration > e.charge_delay  
+        return (t - (e.start_at == undefined ? 0 : e.start_at) )% e.charge_delay + e.charge_duration > e.charge_delay  
     }
     moveEnemy(e : enemy, x : number , y : number ){
         var is_wall = this.pointInDirection(e.x, e.y, x, y, Infinity);
@@ -280,10 +280,6 @@ class game{
                     this.moveEnemy(e, x, y);  
                     break
                 case "fire breath":
-                    e.lifespan--;
-                    if(e.lifespan <= 0){
-                        e.name += "disabled";
-                    }
                     break;
                 case "fire strike":
                     if(this.t - e.birthday == e.warning_time){
@@ -292,10 +288,6 @@ class game{
                             new_walls.push([[item[0] + e.x, item[1] + e.y, item[2] + e.x, item[3] + e.y], this.t + e.wall_duration])
                         }
                         this.temp_walls = this.temp_walls.concat(new_walls);
-                    }
-                    e.lifespan--;
-                    if(e.lifespan <= 0){
-                        e.name += "disabled";
                     }
             }
         }

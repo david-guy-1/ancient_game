@@ -160,7 +160,7 @@ function GameDisplay({data, return_fn, player} : {data : levelData[], return_fn 
     }
     
     return <>
-        <canvas width={990} height={600} id="lowerCanvas" style={{position:"absolute", top:80, left:0, zIndex:0}}  onMouseMove={mouseMove}  ref={lowerCanvas}/>
+        <canvas width={WIDTH} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:80, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={lowerCanvas} />
     </>
 }
 

@@ -53,6 +53,7 @@ type charger = {
     mode : move_mode
     radius : number
     charge_img :  string,
+    start_at ?: number
 } & base_enemy
 
 // for these two : spawned as soon as warning shows . 

@@ -52,7 +52,7 @@ function App() {
         throw "Level state but undefined level";
       }
       return (
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:20, speed:10, hp:5}}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:999999999, speed:10, hp:5}}/>
        )
     case "win":
         return <>You win! <button onClick={() => setState("level")}> Play again </button></>

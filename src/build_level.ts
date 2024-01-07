@@ -40,7 +40,7 @@ img_offset : [-15, -15]
 
 var b1 : bullet_fire = {
     dir : ["player angle", 0],
-    speed : 20, 
+    speed : 10, 
     img : "images/bullet.png",
     img_offset : [-5,-5],
     delay : 40,
@@ -48,11 +48,6 @@ var b1 : bullet_fire = {
     bullet_name : "b1"
 }
 
-var brand :  bullet_fire = clone(b1) as bullet_fire;
-brand.dir = "random";
-
-var bfast : bullet_fire = clone(b1) as bullet_fire;
-bfast.speed = 40;
 
 // -- ENEMIES
 
@@ -411,6 +406,7 @@ var levels = [raining_fire_level, random_pursue_level, shooter_level,chase_orb_l
 
 
 function generateLevel(seed : string, diff : number, width : number = 700, height : number = 600): levelData{
+    console.log(diff);
     var type = r.choice( ["survive","chase orb","collect items","collect fixed items","hit dummy"], seed + "goal type") as goal_type
     var goal : goal = clone(standard_goals[type]) as goal;
 
@@ -442,7 +438,8 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
             if(diff > 2){
                 goal.sequential = r.randint(0, 2, seed + " fixed seq") == 1;
             }
-            var nItems : number = r.randint(5 + diff, 8+2*diff, seed + " fixed nItems")
+            goal.collected_img=undefined;
+            var nItems : number = r.randint(5 + diff, 8+diff, seed + " fixed nItems")
             var edge : boolean  = r.randint(0, 2, seed + " near edge") == 1;
             var tries = 0;
             for(var i=0; i<nItems; i++){
@@ -460,12 +457,12 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
                     goal.locations.push([x,y]);
                 } 
             }
-            goal.spawn_delay = r.randint(10 + 2*diff, 30, seed + " spawn delay ");
+            goal.spawn_delay = r.randint(3 + diff, 10, seed + " spawn delay ");
         break;
         case "collect items":
             goal.spawn_rect = [50, 50, width-50, height-50]; 
-            goal.amount = 5  + 3*diff;
-            goal.spawn_delay = 10 * 2*diff;
+            goal.amount = 5  + diff;
+            goal.spawn_delay = r.randint(3 + diff, 10, seed + " spawn delay ");
         break;
         case "hit dummy":
             goal.x = r.randint(50, width-50, seed + "dummy location x");
@@ -478,62 +475,63 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
     level.goal = goal;
 
     // decide enemies and spawners
-    var current_diff = 0;
-    var items : string[] = ["burster spawner", "chaser", "shooter"];
+    var items : string[] = ["burster spawner", "chaser", "shooter", "raining fire", "pursue spawner"];
     var added : string[] = [];
     var i=0;
-    while(current_diff < diff || i == 5){
-        var choiceOf : string = r.choice(items, seed  + " choose enemy " + i );
+    while(i < diff){
+        var choiceOf : string = r.choice(_.difference(items, added) , seed  + " choose enemy " + i );
+        added.push(choiceOf);
         switch(choiceOf){
             case "burster spawner":
                 var spawner = clone(burster_spawner) as spawner;
-                (((spawner.enemy as transforming_enemy).behaviors[2][1] as normal_enemy).bullet as bullet_fire).dir = ["burst", 16 + 2*diff];
+                (((spawner.enemy as transforming_enemy).behaviors[2][1] as normal_enemy).bullet as bullet_fire).dir = ["burst", 5 + diff];
+                (((spawner.enemy as transforming_enemy).behaviors[2][1] as normal_enemy).bullet as bullet_fire).speed = 8 + 0.2*diff;
                 spawner.interval = 57 - 2*diff;
                 spawner.location = {"mode":"random", "rect":[50, 50, width-50, height-50]};
-                current_diff += 0.8; 
+                level.spawners.push(spawner);
             break;
             case "chaser":
-                for(var j = 0 ; j < diff; j++){
+                for(var j = 0 ; j < Math.floor(2 + diff/2); j++){
                     var enemyc = clone(chaser) as charger;
-                    enemyc.charge_delay = 200 - 5*diff;
+                    enemyc.charge_delay = 120 - 5*diff;
                     enemyc.charge_duration = 40 + 3*diff;
                     enemyc.speed = 1 + 0.2*diff; 
                     enemyc.charge_speed = 6 + 0.3 * diff;
                     enemyc.x = r.randint(50, width-50, seed + "charger location x " + i+ " " + j);
                     enemyc.y = r.randint(50, height-50, seed + "charger location y" + i + " " + j);
+                    enemyc.start_at = Math.random() * 200;
                     level.enemies.push(enemyc)
                 }
-                current_diff += 0.3; 
             break;
             case "shooter":
-                for(var j = 0 ; j < diff; j++){
+                for(var j = 0 ; j < Math.floor(2 + diff/2); j++){
                     var enemys = clone(shooter) as normal_enemy;
                     if(enemys.bullet == undefined){
                         throw "Cloned shooter does not have bullet";
                     }
                     enemys.bullet.dir = ["player angle", Math.random() * 1 - 0.5]; 
-                    enemys.bullet.delay = 40 - diff;
-                    enemys.bullet.speed = 20 + 0.4*diff;
+                    enemys.bullet.delay = 80 - diff;
+                    enemys.bullet.speed = 10 + 0.4*diff;
                     enemys.x = r.randint(50, width-50, seed + "shooter location x " + i + " " + j);
                     enemys.y = r.randint(50, height-50, seed + "shooter location y" + i + " " + j);
+                    enemys.bullet.start_at = Math.floor(Math.random() * 40) - enemys.bullet.delay;
                     level.enemies.push(enemys)
                 }
-                current_diff += 0.6; 
             break;
             case "raining fire":
                 var spawner = clone(fast_fire_spawner) as spawner; 
                 spawner.location = {"mode":"random", "rect":[50, 50, width-50, height-50]};
-                spawner.interval = 32-diff;
+                spawner.interval = 80-2*diff;
                 (spawner.enemy as fire_breaths).warning_time = 83 + diff;
-                current_diff += 0.5; 
+                level.spawners.push(spawner);
             break;
             case "pursue spawner":
                 var spawner = clone(random_pursue_spawner) as spawner;
                 spawner.location = "random edge";
-                spawner.interval = 51 - diff;
+                spawner.interval = 120 - 2*diff;
                 ((spawner.enemy as transforming_enemy).behaviors[1][1] as normal_enemy).speed = 7 + diff/5;
                 (spawner.enemy as transforming_enemy).behaviors[0][0] = 45 - 3*diff; 
-                current_diff += 0.6; 
+                level.spawners.push(spawner);
             break;
         }
         i+=1;
