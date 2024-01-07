@@ -2,6 +2,7 @@
 import { dual_filter } from "./dual_filter.ts";
 import * as l from "./lines.ts"
 import { bullet, charger, enemy, goal, goalCollect, goalPChase, goalPCollect, goalPCollectF, goalPHit, goal_progress, levelData, move_mode, player, spawner, tickOutput, transforming_enemy, wall } from "./typedefs";
+import {WIDTH, HEIGHT, FPS} from "./constants.ts";
 import _ from "lodash"
 class game{
     // other data here as well if necessary
@@ -60,14 +61,14 @@ class game{
         }
     }
     getTransformedEnemy(e : transforming_enemy, t : number){
-        var modTime = t % e.modulus;
+        var modTime = (t-e.birthday) % e.modulus;
         var this_beh : enemy | undefined = undefined;
         for(var item of e.behaviors){
             var [modt, b] = item; 
-            if(modt > modTime){
+            if(modTime <= modt) {
                 this_beh = b;
                 break;
-            }
+            } 
         }
         if(this_beh == undefined){
             throw "enemy with undefined behaviour : " + JSON.stringify(e) + " " + t;
@@ -79,6 +80,7 @@ class game{
             b.y = this_beh.y;
             b.name = this_beh.name;
             b.birthday = this_beh.birthday;
+            b.lifespan = this_beh.lifespan;
         }
         return this_beh;
     }
@@ -161,6 +163,9 @@ class game{
         }
         if(mode[0] == "random"){
             var d = mode[1];
+            if(d == "random"){
+                d = Math.random() * 2*Math.PI;
+            }
             d += (Math.random() * 2*mode[2] - mode[2] );
             mode[1] = d; // mutates enemy
             return [Math.cos(d) * enemySpeed, Math.sin(d) * enemySpeed]
@@ -176,6 +181,23 @@ class game{
         }
         throw "Unknown enemy move mode "
     }
+    spawn_enemy(e : enemy, x : number,  y : number){
+        var e = JSON.parse(JSON.stringify(e)) as enemy;
+        e.x = x;
+        e.y = y;
+        e.birthday = this.t;
+        if(e.type == "transforming"){
+            for (var item2 of e.behaviors){
+                var [n, beh] = item2;
+                beh.x = e.x;
+                beh.y = e.y;
+                beh.birthday = e.birthday;
+                beh.name = e.name;
+                beh.lifespan = e.lifespan
+            }
+        }
+        this.enemies.push(e);
+    }
     tick(mouseX : number, mouseY : number ) : tickOutput{
        // console.log(JSON.stringify(this.enemies));
         //console.log(this.t);
@@ -190,6 +212,12 @@ class game{
 
         // check collisions
         for(var b of this.bullets){
+            if(this.t - this.last_hit <= this.p.invincibility){
+                break;
+            }
+            if(b.radius <= 0 ){ 
+                continue
+            }
             // check if we care in the first place
             if(Math.pow(b.x - this.playerX, 2) + Math.pow(b.y - this.playerY, 2) < Math.pow(b.radius, 2)){
                 this.collide(b);
@@ -204,26 +232,46 @@ class game{
                     var [x,y] = this.calculateMoveDirection(e.mode, e.x, e.y , e.speed, this.playerX, this.playerY );
                     this.moveEnemy(e, x, y);
                     //shoot bullets
-                    if(e.bullet && this.t % e.bullet.delay == e.birthday % e.bullet.delay) {
-                        var speed: [number, number] = [0,0]
-                        if(e.bullet.dir === "random"){
-                            var angle = Math.random()*2*Math.PI;
-                            speed = [Math.cos(angle) * e.bullet.speed, Math.sin(angle) * e.bullet.speed];
-                        };
-                        if(e.bullet.dir == "towards player"){
-                            try {  
-                                speed = l.normalize([this.playerX - e.x, this.playerY-e.y], e.bullet.speed) as [number, number];
-                            } catch(err){
-                                if(err == "normalizing a zero vector"){
-                                    speed = [0, e.bullet.speed];
+                    var mod = e.bullet?.start_at == undefined ? 0 : e.bullet.start_at;
+                    if(e.bullet && (this.t+mod) % e.bullet.delay == e.birthday % e.bullet.delay) {
+                        // case 1 : single bullet
+                        if(e.bullet.dir[0] !== "burst"){
+                            var speed: [number, number] = [0,0]
+                            if(e.bullet.dir === "random"){
+                                var angle = Math.random()*2*Math.PI;
+                                speed = [Math.cos(angle) * e.bullet.speed, Math.sin(angle) * e.bullet.speed];
+                            };
+                            if(e.bullet.dir == "towards player"){
+                                try {  
+                                    speed = l.normalize([this.playerX - e.x, this.playerY-e.y], e.bullet.speed) as [number, number];
+                                } catch(err){
+                                    if(err == "normalizing a zero vector"){
+                                        speed = [0, e.bullet.speed];
+                                    }
                                 }
                             }
-                        }
-                        if(Array.isArray(e.bullet.dir) && e.bullet.dir[0] == "fixed"){
-                            speed = [e.bullet.dir[1], e.bullet.dir[2]] 
-                        }
+                            if(Array.isArray(e.bullet.dir) && e.bullet.dir[0] == "player angle"){
+                                var offset = e.bullet.dir[1]; 
+                                var angle = Math.atan2(this.playerY - e.y, this.playerX - e.x) + offset; 
+                                var bspd = e.bullet.speed
+                                speed = [Math.cos(angle) * bspd,Math.sin(angle) * bspd]
+                            }
+                            if(Array.isArray(e.bullet.dir) && e.bullet.dir[0] == "fixed"){
+                                speed = [e.bullet.dir[1], e.bullet.dir[2]] 
+                            }
+                            this.bullets.push({"x" : e.x, "y" : e.y, speed : speed, radius : e.bullet.radius, img:e.bullet.img, img_offset : e.bullet.img_offset, name:e.bullet.bullet_name});
+                        } else {
+                            // burst bullet
+                            var amount = e.bullet.dir[1]  as number;
+                            var start_angle = Math.random() * 2 * Math.PI
+                            var turn = 2 * Math.PI / amount;    
 
-                        this.bullets.push({"x" : e.x, "y" : e.y, speed : speed, radius : e.bullet.radius, img:e.bullet.img, img_offset : e.bullet.img_offset, name:e.bullet.bullet_name});
+                            for(var i=0; i < amount; i++){
+                                var angle = start_angle + turn * i
+                                var speed = l.normalize([Math.cos(angle), Math.sin(angle)], e.bullet.speed) as [number, number]
+                                this.bullets.push({"x" : e.x, "y" : e.y, speed : speed, radius : e.bullet.radius, img:e.bullet.img, img_offset : e.bullet.img_offset, name:e.bullet.bullet_name});
+                            }
+                        }
                     }
                 break;
                 case "charger":
@@ -257,6 +305,9 @@ class game{
                 e = this.getTransformedEnemy(e, this.t)
             }
             if(e.type == "normal" || e.type == "charger" || ((e.type == "fire breath" || e.type == "fire strike") && this.t - e.birthday > e.warning_time)){
+                if(e.radius <= 0){
+                    continue;
+                }
                 if(Math.pow(e.x - this.playerX,2) + Math.pow( e.y - this.playerY,2) < Math.pow(e.radius,2)){
                     this.collideEnemy(e);
                 }
@@ -264,30 +315,39 @@ class game{
         }
         // process spawners
         for(var s of this.spawners){
-            if(this.t > s.start_time && this.t % s.interval == s.start_time % s.interval){
+            if(this.t >= s.start_time && this.t % s.interval == s.start_time % s.interval){
                 // spawn new enemy 
-                var e = JSON.parse(JSON.stringify(s.enemy)) as enemy;
-                e.birthday = this.t; 
+                var x = 0;
+                var y = 0; 
                 if(Array.isArray(s.location)){
-                    e.x = s.location[0];
-                    e.y = s.location[1];
+                    x = s.location[0];
+                    y = s.location[1];
+                } else if(s.location == "random edge"){
+                    var side = "udlr"[Math.floor(Math.random()*4)];
+                    if(side == "l"){
+                        x = 0;
+                        y = Math.random() * HEIGHT;
+                    }
+                    if(side == "r"){
+                        x = WIDTH;
+                        y = Math.random() * HEIGHT;                         
+                    }
+                    if(side == "u"){
+                        x = Math.random() * WIDTH;
+                        y = 0;
+                    }
+                    if(side == "d"){
+                        x = Math.random() * WIDTH;
+                        y = HEIGHT;
+                    }
+                    
                 }
                 else{
                     var [tlx, tly, brx, bry] = s.location.rect;
-                    e.x = Math.random() * (brx - tlx) + tlx;
-                    e.y = Math.random() * (bry - tly) + tly;
+                    x = Math.random() * (brx - tlx) + tlx;
+                    y = Math.random() * (bry - tly) + tly;
                 }
-                if(e.type == "transforming"){
-                    for (var item2 of e.behaviors){
-                        var [n, beh] = item2;
-                        beh.x = e.x;
-                        beh.y = e.y;
-                        beh.birthday = e.birthday;
-                        beh.name = e.name;
-                        
-                    }
-                }
-                this.enemies.push(e);
+                this.spawn_enemy(s.enemy, x, y);
             }
             
         }
@@ -400,14 +460,36 @@ class game{
         
         var [stayed_bullets, destroyed_bullets] = dual_filter(this.bullets, b => b.x > 0 && b.x < 1000 && b.y > 0 && b.y < 1000 && b.name.indexOf("disabled") === -1);
         // for a transforming enemy , if any of its behaviours are disabled, the entire thing is disabled.
-        var [stayed_enemies, destroyed_enemies] = dual_filter(this.enemies,x => x.name.indexOf("disabled") === -1 || (x.type=="transforming" && _.every(x.behaviors, t => t[1].name.indexOf("disabled") === -1)));
 
-        var [stayed_spawners, destroyed_spawners] = dual_filter(this.spawners, x => x.name.indexOf("disabled") === -1);
+        function is_enemy_disabled(x : enemy, t : number){
+            if(x.name.indexOf("disabled") !== -1){
+                return true;
+            } 
+            if(x.type=="transforming" && _.some(x.behaviors, t => t[1].name.indexOf("disabled") !== -1)){
+                return true;
+            }
+            if(x.lifespan !== undefined && t > x.birthday + x.lifespan) {
+                return true;
+            }
+            return false;
+        }
+
+
+        var [stayed_enemies, destroyed_enemies] = dual_filter(this.enemies,x => !is_enemy_disabled(x,this.t) );
+
+        var [stayed_spawners, destroyed_spawners] = dual_filter(this.spawners, x => x.name.indexOf("disabled") === -1 && (x.end_time == undefined || x.end_time > this.t));
         var [stayed_walls, destroyed_walls] = dual_filter(this.temp_walls, (x) => x[1] < this.t) ;
         this.bullets = stayed_bullets;
         this.enemies = stayed_enemies;
         this.spawners = stayed_spawners;
         this.temp_walls =stayed_walls;
+        for(var e of destroyed_enemies){
+            if(e.spawn_on_death){
+                for(var e2 of e.spawn_on_death){
+                    this.spawn_enemy(e2, e.x, e.y);
+                }
+            }
+        }
         this.t++;
         return {"bullets": destroyed_bullets, "enemies" : destroyed_enemies, "spawners" : destroyed_spawners, "walls": destroyed_walls, "win":win}
         

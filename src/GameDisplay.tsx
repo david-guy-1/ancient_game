@@ -2,13 +2,13 @@ import React, { MouseEvent, useEffect, useRef, useState } from "react";
 import game from "./game.tsx";
 //@ts-ignore
 import * as c from "./canvasDrawing.js";
+import {WIDTH, HEIGHT, FPS} from "./constants.ts";
 import { levelData, player} from "./typedefs";
 import _ from "lodash";
 var interval = -1;
 
 function GameDisplay({data, return_fn, player} : {data : levelData[], return_fn : Function, player : player }){
     var lastRendered = Date.now();
-    var fps = 40;
     var mouseX = 0;
     var mouseY = 0;
     const [level, setLevel]  = useState(0);
@@ -18,7 +18,7 @@ function GameDisplay({data, return_fn, player} : {data : levelData[], return_fn 
     useEffect(function(){ 
         console.log("called");
         clearInterval(interval);
-        interval = setInterval(update, 1000/fps); 
+        interval = setInterval(update, 1000/FPS); 
     }, [level])
 
     if(lose){
@@ -123,7 +123,11 @@ function GameDisplay({data, return_fn, player} : {data : levelData[], return_fn 
                         allSoFar = false;
                     }
                 }
-                var s = _.countBy(g.progress.collected).true + "/" + g.goal.locations.length
+                var collected = _.countBy(g.progress.collected).true;
+                if(collected == undefined){
+                    collected = 0;
+                }
+                var s = collected + "/" + g.goal.locations.length
                 c.drawText(ctx,"Collect items "+ s, 10, 40 )
             }            
             if(g.goal.mode == "hit dummy" && g.progress.mode == "hit dummy"){

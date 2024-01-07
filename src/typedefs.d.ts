@@ -12,16 +12,18 @@ type bullet = {name:string,
 }
 
 type bullet_fire = {
-    dir : "random" | "towards player" | ["fixed",number,number], 
+    dir : "random" | "towards player" | ["fixed",number,number] | ["burst", number] | ["player angle", number] 
     speed : number,
     img : string, 
     img_offset : [number, number], 
     delay : number, 
     radius : number, 
-    bullet_name : string}
+    bullet_name : string,
+    start_at ?: number
+}
 // random  : current direction, turn speed
 // location mover : x and y of target location 
-type move_mode = ["random", number, number] | "pursuit" | ["location_mover", number, number]
+type move_mode = ["random", number | "random", number] | "pursuit" | ["location_mover", number, number]
 
 type base_enemy = {
     name : string
@@ -29,7 +31,9 @@ type base_enemy = {
     y : number
     image : string 
     birthday : number ,
-    img_offset:[number, number]
+    img_offset:[number, number],
+    lifespan ?: number,
+    spawn_on_death ?: enemy[]
 }
 type normal_enemy   = {
     type : "normal",
@@ -75,7 +79,7 @@ type fire_strike = {
 
 // enemy is certain things depending on time. 
 // if behaviours is [t1, x1], [t2, x2], [t3, x3], ...
-// behaviour before t1 is x1, between t1 and t2 is x2, and so on. 
+// behaviour with t <= t1 is x1, t1 < t <= t2 is x2, and so on. 
 type transforming_enemy =  {
     type : "transforming"; 
     modulus : number
@@ -89,8 +93,9 @@ type spawner = {
     enemy : enemy
     interval : number
     start_time : number
-    location : [number, number]  | {mode : "random", rect : [number, number,number, number]}
+    location : [number, number]  | {mode : "random", rect : [number, number,number, number]} | "random edge"
     name : string 
+    end_time ?: number
 
 }
 
