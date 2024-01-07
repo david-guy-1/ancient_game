@@ -2,6 +2,8 @@ import { levelData } from "./typedefs";
 import * as d from "./draw_symbols.ts";
 //@ts-ignore
 import * as c from "./canvasDrawing.js";
+import Bg from "./BgImg.tsx";
+import BgImg from "./BgImg.tsx";
 // 
 
 function hover(x : [number,number], levels : levelData[][] , symbols : string[][], obtained : Record<string ,boolean>){
@@ -13,13 +15,13 @@ function hover(x : [number,number], levels : levelData[][] , symbols : string[][
     
     c.drawText(ctx, "Symbols in this room:" , 0, 70)
     for(var item of symbols[index]){
-        d.draw_markings(ctx, 30, 150+50*i, item)
+        d.draw_markings(ctx, 30, 100+50*i, item)
         if(obtained[item] == true){
             c.drawText(ctx, "✓", 0, 150+50*i+30,undefined, "green")
         }
         i++;
     }
-
+    c.drawText(ctx, "Click to enter" , 0, 400)
 }
 function LevelSelector({levels,symbols, callback,stateCallback,obtained}: {levels : levelData[][], symbols : string[][], callback : Function,stateCallback:Function,obtained : Record<string ,boolean>}){
     return <><table style={{position:"absolute", left:0, top:0,width:600,height:600}} ><tbody>
@@ -31,7 +33,7 @@ function LevelSelector({levels,symbols, callback,stateCallback,obtained}: {level
                     function(){
                         var lst2 = [];
                         for(var j=0; j<5; j++){
-                            lst2.push(<td onMouseOver={function(this:[number,number]){hover(this, levels, symbols,obtained)}.bind([i,j])}key ={"table row col " + i + " " + j} id={i + " " + j} onClick={(e) => callback((e.target as HTMLElement).getAttribute("id")?.split(" "))}>{i} {j}</td>)
+                            lst2.push(<td onMouseOver={function(this:[number,number]){hover(this, levels, symbols,obtained)}.bind([i,j])}key ={"table row col " + i + " " + j} id={i + " " + j} onClick={(e) => callback((e.target as HTMLElement).getAttribute("id")?.split(" "))}><img id={i + " " + j}src={"images/level_img_" + (5*i+j)%3+ ".png"} /></td>)
                         }
                         return lst2; 
                     }()
@@ -42,10 +44,13 @@ function LevelSelector({levels,symbols, callback,stateCallback,obtained}: {level
     }()}
 
     </tbody></table>
+    
     <canvas style={{position:"absolute", left:700, top:0}} height={600} width={200} id="Canvas"></canvas>
     <br />
     <button style={{position:"absolute", left:700, top:500}}  onClick={() => stateCallback("puzzle")}>Read inscription</button>
     <button style={{position:"absolute", left:700, top:550}}  onClick={() => stateCallback("upgrades")}>Upgrades</button>
+    
+    <BgImg img="images/selection_bg.png" />
     </>
 }
 

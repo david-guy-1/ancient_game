@@ -8,6 +8,7 @@ import { puzzleType } from "./typedefs";
 import * as c from "./canvasDrawing.js";
 import HoverText from "./HoverText.tsx";
 import _ from "lodash";
+import BgImg from "./BgImg.tsx";
 
 // put puzzle moves here!
 var presses : string[]= [];
@@ -139,7 +140,14 @@ function SymbolsC(props : any){
         newRender[1] = "0"
         useRender(newRender.join("") + "a"); // re-render to get the hover text working
     })
-
+    function show(i : string){
+        //@ts-ignore
+        document.getElementById("text"+i).style.display = "inline";
+    }
+    function hide(i : string){
+        //@ts-ignore
+        document.getElementById("text"+i).style.display = "none";
+    }
     function moveMade(){
         // check completion
         switch(progress){
@@ -198,7 +206,7 @@ function SymbolsC(props : any){
         // re-draw but don't reset
         useRender(render[2] == "a" ? "01b" : "01a");
     }
-    return <>
+    return <><BgImg img="images/puzzlebw.png"/>
     <button style={{position:"absolute", top:600, left:600}} onClick={() => props.backCallback()}> Return</button>
         {function(){
         var lst = [];
@@ -220,8 +228,11 @@ function SymbolsC(props : any){
                 case 0: // colors
                     var colors = "red,yellow,green,blue,white,black".split(",");
                     for(var i=0; i<colors.length; i++){
-                        var el = <div style={{position:"absolute", top:80*i+50, left:600,backgroundColor:colors[i] ,width:50, height:50}} onClick={function(this:string){ presses.push(this); if(presses.length > colors.length) { presses = presses.slice(1)} ; moveMade()}.bind(colors[i])}> </div>
+                        var el = <div style={{position:"absolute", top:80*i+50, left:600,backgroundColor:colors[i] ,width:50, height:50}} onClick={function(this:string){ presses.push(this); if(presses.length > colors.length) { presses = presses.slice(1)} ; moveMade()}.bind(colors[i])} onMouseOver={function(this:string){show(this)}.bind(i.toString())} onMouseOut={function(this:string){hide(this)}.bind(i.toString())}> </div>
+
+                        var e2 =  <div style={{position:"absolute", top:80*i+50, left:550,width:50, height:50,display:"none"}} id={"text"+i}>Click </div>
                         lst.push(el);
+                        lst.push(e2);
                     }
                     lst.push(<div style={{position:"absolute", top:600, left:10}}>{presses.join(" ")}</div>)
                 break
@@ -252,7 +263,7 @@ function SymbolsC(props : any){
         }()
     }
     <canvas width={1200} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/>
-    <span style={{position:"absolute", top:0, left:0, zIndex:0}} >Hover over text for translations</span>
+    <h3 style={{position:"absolute", top:0, left:200, zIndex:0}} >Hover over text for translations</h3>
     
 
 </>

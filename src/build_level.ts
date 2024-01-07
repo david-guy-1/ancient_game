@@ -492,6 +492,7 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
     level.goal = goal;
     if(level.goal.mode=="hit dummy"){
         var newsp = clone(shooter_spawner) as spawner;
+        newsp.interval = 400;
         newsp.location = {"mode":"random", 'rect':[0, 0, width, height]};
         level.spawners.push(newsp)
     }

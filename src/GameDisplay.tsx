@@ -5,6 +5,7 @@ import * as c from "./canvasDrawing.js";
 import {WIDTH, HEIGHT, FPS} from "./constants.ts";
 import { levelData, player} from "./typedefs";
 import _, { last } from "lodash";
+import BgImg from "./BgImg.tsx";
 var interval = -1;
 var g_upgrades : boolean[] = []
 // upgrades : slow down, speed up, invincibility. 
@@ -202,6 +203,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
     }
     return <>
     {/* need to call lowerCanvas.current.focus(); so handlePress listener will work */}
+        <BgImg img={Math.random() > 0.5 ? "images/background.png" : "images/background2.png"}/>
         <canvas width={WIDTH} height={80} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={upperCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
         <canvas tabIndex={0} width={WIDTH} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:80, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={lowerCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
     </>

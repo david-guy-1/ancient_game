@@ -8,6 +8,7 @@ import { puzzleType } from "./typedefs";
 import * as c from "./canvasDrawing.js";
 import HoverText from "./HoverText.tsx";
 import _ from "lodash";
+import BgImg from "./BgImg.tsx";
 
 // put puzzle moves here!
 var presses : string[]= [];
@@ -49,6 +50,6 @@ function ExploreDone(props : any){
         }
     })
    
-    return <> <canvas width={1200} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/> <span style={{position:"absolute", top:600,left:400, width:400,height:50,backgroundColor:"darkred", zIndex:0,color:"white",fontSize:30}} onClick={() => callback()}>Go back </span></>
+    return <> <BgImg img="images/end_ins.png"/><canvas width={1200} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/> <span style={{position:"absolute", top:600,left:400, width:400,height:50,backgroundColor:"darkred", zIndex:0,color:"white",fontSize:30}} onClick={() => callback()}>Go back </span></>
 }
 export default ExploreDone;

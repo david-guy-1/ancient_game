@@ -13,6 +13,7 @@ import {WIDTH, HEIGHT, FPS, WORDS} from "./constants.ts";
 import { generatePuzzle } from './build_puzzle.ts'
 import SymbolsC from './SymbolsC.tsx'
 import ExploreDone from './ExploreDone.tsx'
+import BgImg from './BgImg.tsx'
 /*
 if(window.set == undefined){
   window.set = 1;
@@ -106,7 +107,7 @@ function App() {
             var s = "";
             var wordlen = Math.random() < 0.5 ? 2 : 3
             for(var j=0; j < wordlen; j++){
-              s += valid_symbols[Math.floor(Math.random() * len) ]+ "|"
+              s += valid_symbols[Math.floor(Math.random() * valid_symbols.length) ]+ "|"
             }
             s = s.slice(0, s.length-1);
             if(alien_words.indexOf(s) == -1){
@@ -114,6 +115,7 @@ function App() {
             }
           }
           alien_words.push(s);
+          console.log(s);
           learned_translations[s] = false;
         }
         // make a level
@@ -149,17 +151,17 @@ function App() {
         return <SymbolsC ETA={english_to_alien} ATE={alien_to_english} seed={seed} LT={learned_translations} puzzle={puzzle} progress={end_progress} backCallback={() => setState("select")}progress_callback={() => progress_end(end_progress+1)} GS={good_symbols} BS={bad_symbols} IM={images}/>
       case "upgrades":
         return <>
-          <h3>Buy upgrades</h3><button onClick={() => setState("select") }>Go back</button><br />
-          <span>You have {tokens} tokens</span>
+        <BgImg img="images/upgrades.png" />
+        <table><tbody><td><h3>Buy upgrades</h3></td><td><button onClick={() => setState("select") }>Go back</button></td><td>You have {tokens} tokens</td></tbody></table>
           {
             function(){
               var lst  =[];
               var upStrings = ["slow time", "speed up", "invincibility", "extra health"];
-              var upDesc = ["Press Q to slow down time for a bit", "Press W to give yourself extra speed", "Press E to give yourself temporary invincibility", "50 HP instead of 40"]
+              var upDesc = ["Press Q to slow down time for a bit", "Press W to give yourself extra speed", "Press E to give yourself temporary invincibility", "50 HP instead of 25"]
               for(var i=0; i < 4; i++){
                 lst.push(<><h3>{upStrings[i]}{ tokens == 0 ? <button>Can't afford</button>: upgrades[i] ? <button>Already bought</button> :
                 <button onClick={function(this:number){upgrades[this] = true;tokens--; reRender(!render)}.bind(i)}>Buy </button>}</h3>
-                <span>{upDesc[i]}</span><br />
+                <span>{upDesc[i]}</span>
                 <br /></>) 
               }
               return lst; 
