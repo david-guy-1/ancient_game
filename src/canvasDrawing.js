@@ -35,13 +35,26 @@ export function drawPolygon(context, points_x , points_y, color='black', width=1
 
 
 export function drawImage(ctx, img, x, y, width=undefined, height=undefined) {
+	var draw = true;
     if(typeof img == "string"){
-        img = loadImage(img);
-    }
-	if(width == undefined){
-		ctx.drawImage(img, x, y);
-	} else {
-		ctx.drawImage(img, x, y, width, height);
+		if(imgStrings[img] == undefined){
+			var im = new Image();
+			im.src = img;
+			im.onload = function(){
+				drawImage(ctx, im, x,y,width,height);
+				imgStrings[img] = im;
+			}		
+			draw = false; 	
+		}else{ 
+        	img = loadImage(img);
+		}
+    } 
+	if(draw){
+		if(width == undefined){
+			ctx.drawImage(img, x, y);
+		} else {
+			ctx.drawImage(img, x, y, width, height);
+		}
 	}
 }
 export function loadImage(string){
@@ -112,7 +125,8 @@ export  function drawRectangle2(context, tlx, tly, width, height, color = "black
 
 // bottom left corner of text 
 export function drawText(context, text_, x, y, width =undefined, color = "black", size = 20) {
-    context.font = size + "px Arial";
+    context.font = size + "px Arial ";
+	context.fillStyle = color;
 	if(width == undefined){
 		context.fillText(text_, x,y);
 	} else{

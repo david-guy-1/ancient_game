@@ -295,7 +295,7 @@ var bomb_layer : spawner = {
 
 
 var basic_level : levelData = {
-    goal : {mode:"survive", time : 400},
+    goal : {mode:"survive", time : 1},
     walls : [],
     enemies : [],
     spawners : [],
@@ -406,8 +406,6 @@ var levels = [raining_fire_level, random_pursue_level, shooter_level,chase_orb_l
 
 
 function generateLevel(seed : string, diff : number, width : number = 700, height : number = 600): levelData{
-    return clone(basic_level); // DEBUG
-    console.log(diff);
     var type = r.choice( ["survive","chase orb","collect items","collect fixed items","hit dummy"], seed + "goal type") as goal_type
     var goal : goal = clone(standard_goals[type]) as goal;
 
@@ -546,8 +544,8 @@ function generateGame(seed : string , width : number,height:number, english_word
     if(english_words.length != alien_words.length ){
         throw "list of words have different lengths";
     }
-    var lst = [];
-    var strings = []
+    var lst : levelData[][] = [];
+    var strings : string[][] = []
     var difficulty_lst = [
         5,4,4,4,5,
         4,3,3,3,4,
@@ -563,8 +561,23 @@ function generateGame(seed : string , width : number,height:number, english_word
             levels.push(generateLevel(seed + " " + i + " " + j , this_diff, width, height));
         }
         lst.push(levels);
-        strings.push(["abcd", "efgh"]);
+        strings.push([]);
     } 
+    // for each alien word, choose 2 rooms to put it into
+    var add_tries = 0;
+    for(var word of alien_words){
+        var successful_adds = 0;
+        while(successful_adds  < 2){
+            
+            add_tries ++; 
+            var n1 = r.randint(0, 25, seed + word + " a " + add_tries);
+            if(strings[n1].length >= 4){
+                continue;
+            }
+            strings[n1].push(word);
+            successful_adds++
+        }
+    }
     var words = r.shuffle(english_words, seed + " shuffle words") ;
     var english_to_alien  :Record<string, string> = {};
     var alien_to_english  :Record<string, string> = {};

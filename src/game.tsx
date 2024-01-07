@@ -437,7 +437,7 @@ class game{
             }
         }   
         if(this.progress == "completed" && this.end_door == undefined){
-            this.end_door = [Math.random() * 600 + 200, Math.random() * 400 + 100 ];
+            this.end_door = [50+Math.random()*(WIDTH - 100),50 + Math.random()*(HEIGHT-100)];
         }
         var win = false;
         if(this.end_door !== undefined) {

@@ -140,15 +140,18 @@ function generatePath(size1  : number, size2 : number, startPt : [number,number]
 
 
 export function generatePuzzle(seed : string) : puzzleType{
-    var buttons = r.shuffle(["red,yellow,green,blue,white,black".split(",")], seed + " colors" );
+    var buttons = r.shuffle("red,yellow,green,blue,white,black".split(","), seed + " colors" );
+    console.log(buttons);
     var arithmetic : [number, "+" | "-", number][]= [];
+    var tries = 0;
     for(var i=0; i < 7; i++){
         // add an arithmetic problem, numbers go to 12
         var added = false;
         while(added == false){
-            var n1 = Math.floor(Math.random() * 13);
-            var n2 = Math.floor(Math.random() * 13);
-            var symbol = Math.random() < 0.5 ? "+" : "-";
+            tries ++;
+            var n1 = r.randint(0, 13,seed + " " + tries )
+            var n2 = r.randint(0, 13,seed + "b " + tries )
+            var symbol = r.randint(0,2, seed + "c" + tries) == 1 ? "+" : "-";
             if(symbol == "+" && 0 <= n1+n2 && n1+n2 <= 12){
                 added = true;
                 arithmetic.push([n1, symbol, n2]);

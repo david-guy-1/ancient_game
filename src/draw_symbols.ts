@@ -41,6 +41,7 @@ type shape = {
     "/" : diagonal_choice
 }
 export function draw(ctx : CanvasRenderingContext2D, shape : shape , xn : number, yn : number ){
+    console.log(yn);
     var x = 2 + xn
     var y = 5  + yn
     for(var i=0; i < 3; i++){
@@ -94,3 +95,10 @@ export function make_shape(s : string) : shape {
     return {"h" : [lst[0], lst[1], lst[2]], "v":[lst[3],lst[4],lst[5]],"\\":lst[6],"/":lst[7]}
 }
 
+
+export function draw_markings(ctx :CanvasRenderingContext2D, x : number, y : number,  string : string){
+    var items : string[] = string.split("|");
+    for(var i=0; i< items.length; i++){
+        draw(ctx, make_shape(items[i]),x+40*i, y)
+    }
+}

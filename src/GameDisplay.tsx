@@ -23,11 +23,13 @@ function GameDisplay({data, return_fn, player} : {data : levelData[], return_fn 
 
     if(lose){
         clearInterval(interval);
-        return <>You lose! <button onClick={() => return_fn(false)}> Return</button></>
+        return_fn(false);
+        return;
     }
     if(data[level] == undefined){
         clearInterval(interval);
-        return <>You win! <button onClick={() => return_fn(true)}> Return</button></>
+        return_fn(true);
+        return;
     }
     var g : game = new game(data[level], player);
 	function mouseMove(e : MouseEvent){

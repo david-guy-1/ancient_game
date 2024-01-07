@@ -12,6 +12,7 @@ import * as r from "./random.js";
 import {WIDTH, HEIGHT, FPS, WORDS} from "./constants.ts";
 import { generatePuzzle } from './build_puzzle.ts'
 import SymbolsC from './SymbolsC.tsx'
+import ExploreDone from './ExploreDone.tsx'
 /*
 if(window.set == undefined){
   window.set = 1;
@@ -38,20 +39,22 @@ var alien_to_english : Record<string, string> | undefined = undefined;
 var seed : string | undefined  = undefined; 
 var learned_translations : Record<string, boolean> = {};
 var puzzle : puzzleType;
-var end_progress = 0; 
+
 var good_symbols : string []  = [];
 var bad_symbols : string[] = [];
 var images : string[][] = [];
-function App() {  
 
+var index : number = 0;
+function App() {  
   const [state, setState] = useState("seed");
   const [level, setLevel] = useState<levelData[] | undefined>(undefined);
+  const [end_progress, progress_end] = useState(0);
   console.log(JSON.stringify(levels));
   function startGame(e: [string, string]){
     if(levels == undefined){
       throw "Start game called with undefined level";
     }
-    var index = parseInt(e[0])*5 + parseInt(e[1]); 
+    index = parseInt(e[0])*5 + parseInt(e[1]); 
     setLevel(levels[index]);
     setState("level");
   }
@@ -62,17 +65,24 @@ function App() {
         throw "Level state but undefined level";
       }
       return (
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:999999999, speed:10, hp:5}}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:10, hp:5}}/>
        )
     case "win":
-        return <>You win! <button onClick={() => setState("level")}> Play again </button></>
+        for(var word of (symbols as string[][])[index]){
+          learned_translations[word ] =true
+        }
+        //return <ExploreDone symbols={(symbols as string[][])[index]} ATE={alien_to_english} callback={() => setState("select")}></ExploreDone>
+        return <ExploreDone symbols={["green","four","star"].map((x) =>english_to_alien == undefined ? "" : english_to_alien[x])} ATE={alien_to_english} callback={() => setState("select")}></ExploreDone>
+        
     case "lose":
-      return <>You lose! <button onClick={() => setState("level")}> Play again </button></>
+      return <>You lose! <button onClick={() => setState("select")}> Play again </button></>
+    case "trueWin":
+      return <>You escaped!</>
     case "select":
       if(levels == undefined || symbols == undefined){
-        throw "Level/symbol state but undefined level";
+        throw "Symbol state but undefined level";
       }
-      return <LevelSelector levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} />
+      return <LevelSelector levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} readCallback={() => setState("puzzle")} obtained={learned_translations} />
     case "seed":
       return <>Enter a seed, or leave blank for random seed<br /><textarea id="seeder"></textarea><br /><button onClick={() => {
         seed = (document.getElementById("seeder") as HTMLTextAreaElement).value;
@@ -93,18 +103,13 @@ function App() {
             }
           }
           alien_words.push(s);
-          learned_translations[s] = Math.random() < 0.5 // DEBUG;
+          learned_translations[s] = true;
           console.log(s);
         }
-        end_progress = 3;
         // make a level
         [levels,symbols,english_to_alien, alien_to_english] = generateGame(seed + "game", WIDTH, HEIGHT, JSON.parse(JSON.stringify(WORDS)), alien_words);
         // get final puzzle here
-        //puzzle = generatePuzzle(seed + " puzzle");
-        // DEBUG
-        puzzle={"buttons":["red","yellow","green","blue","white","black"],"arithmetic":[[4,"-",3],[8,"+",1],[6,"-",0],[2,"+",10],[7,"+",0],[0,"+",7],[5,"-",4]],"path":[[true,true,false,false,false,false,false,false,false,false],[false,true,false,false,false,false,false,false,false,false],[false,true,false,true,true,true,false,false,false,false],[true,true,false,true,false,true,false,false,false,false],[true,false,true,true,false,true,true,false,false,false],[true,false,true,false,false,false,true,false,false,false],[true,false,true,false,false,false,true,false,false,false],[true,true,true,false,false,false,true,true,true,true],[false,false,false,false,false,false,false,false,false,true],[false,false,false,false,false,false,false,false,false,true]],"arrows":[["down",7],["left",7],["left",6],["up",4],["left",7],["left",4],["up",6]]}
-
-        
+        puzzle = generatePuzzle(seed + " puzzle");
         var words = r.shuffle("leaf,star,wand,book,flower,circle,ring,gem".split(","),seed + " words ");
         good_symbols = words.slice(0, 4);
         bad_symbols = words.slice(4);
@@ -122,10 +127,14 @@ function App() {
           }
         }
         //
-        setState("puzzle");
+        setState("select");
       }}>Start</button></>
       case "puzzle":
-        return <SymbolsC ETA={english_to_alien} ATE={alien_to_english} seed={seed} LT={learned_translations} puzzle={puzzle} progress={end_progress} progress_callback={() => end_progress++} GS={good_symbols} BS={bad_symbols} IM={images}/>
+        if(end_progress == 4){
+          setState("trueWin");
+          return <></>
+        }
+        return <SymbolsC ETA={english_to_alien} ATE={alien_to_english} seed={seed} LT={learned_translations} puzzle={puzzle} progress={end_progress} backCallback={() => setState("select")}progress_callback={() => progress_end(end_progress+1)} GS={good_symbols} BS={bad_symbols} IM={images}/>
   }
 }
 
