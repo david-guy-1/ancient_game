@@ -170,3 +170,10 @@ type player= {
     speed : number,
     hp : number
 }
+
+type puzzleType = {
+    buttons : string[]
+    arithmetic : [number, "+"|"-" , number][]
+    path : boolean[][]
+    arrows : [string,number][]
+}

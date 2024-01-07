@@ -406,6 +406,7 @@ var levels = [raining_fire_level, random_pursue_level, shooter_level,chase_orb_l
 
 
 function generateLevel(seed : string, diff : number, width : number = 700, height : number = 600): levelData{
+    return clone(basic_level); // DEBUG
     console.log(diff);
     var type = r.choice( ["survive","chase orb","collect items","collect fixed items","hit dummy"], seed + "goal type") as goal_type
     var goal : goal = clone(standard_goals[type]) as goal;
@@ -541,7 +542,10 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
 
     return level;
 }
-function generateGame(seed : string , width : number,height:number): [levelData[][], string[][], Record<string, string> ]{
+function generateGame(seed : string , width : number,height:number, english_words : string[], alien_words : string[]): [levelData[][], string[][], Record<string, string>,Record<string, string> ]{
+    if(english_words.length != alien_words.length ){
+        throw "list of words have different lengths";
+    }
     var lst = [];
     var strings = []
     var difficulty_lst = [
@@ -561,7 +565,14 @@ function generateGame(seed : string , width : number,height:number): [levelData[
         lst.push(levels);
         strings.push(["abcd", "efgh"]);
     } 
-    return [lst, strings, {"abc" : "abc" , "def":"def"}];
+    var words = r.shuffle(english_words, seed + " shuffle words") ;
+    var english_to_alien  :Record<string, string> = {};
+    var alien_to_english  :Record<string, string> = {};
+    for(var i=0; i < words.length; i++){
+        english_to_alien[words[i]] = alien_words[i];
+        alien_to_english[ alien_words[i]] = words[i];
+    }
+    return [lst, strings, english_to_alien, alien_to_english];
 }
 
 export default generateGame
