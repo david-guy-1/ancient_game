@@ -132,7 +132,7 @@ function App() {
 
         
     case "lose":
-      return <>You lose! <button onClick={() => setState("select")}> Play again </button></>
+      return <div style={{"position":"absolute",top:0,left:0, width:1300,height:700,backgroundColor:"black",color:"white"}}>You git hit by too many bullets!<br />You retreat out of this part of the labyrinth. <br /> <button onClick={() => setState("select")}> Back </button></div>
     case "trueWin":
       return <><BgImg img="images/end.png"/><div style={{position:"absolute", left:281,top:509}}>You escaped... but to where? You don't recognize this place!<br /><button onClick={() => setState("seed")}>Back to main menu</button></div></>
     case "select":
@@ -143,7 +143,7 @@ function App() {
       <LevelSelector seed={seed} levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} stateCallback={(e : string) => setState(e)} obtained={learned_translations} /></>
     case "seed":
       return <><BgImg img="images/mainMenu.png"/>
-      <div style={{position:"absolute", top:200,left:300,color:"white"}}><h1>Alien Planet Decipherment Escape</h1>Press M to mute/unmute<br />Note: it starts out muted, this is not a bug.<br />Enter a seed, or leave blank for random seed<br /><textarea id="seeder"></textarea><br /><button onClick={() => {
+      <div style={{position:"absolute", top:200,left:300,color:"white"}}><h1>Alien Labyrinth Decipherment Escape</h1>Press M to mute/unmute<br />Note: it starts out muted, this is not a bug.<br />Enter a seed, or leave blank for random seed<br /><textarea id="seeder"></textarea><br /><button onClick={() => {
         seed = (document.getElementById("seeder") as HTMLTextAreaElement).value;
         if(seed.length == 0){
           seed = r.sha256("" + Math.random()); 
