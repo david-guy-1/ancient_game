@@ -8,18 +8,25 @@ import _, { last } from "lodash";
 import BgImg from "./BgImg.tsx";
 var interval = -1;
 var g_upgrades : boolean[] = []
-// upgrades : slow down, speed up, invincibility. 
+// upgrades : slow down, speed up, invincibility.
+var totalHits : number = 0; 
 function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], return_fn : Function, player : player , upgrades : boolean[]}){
     var lastRendered = Date.now()+400;
     var mouseX = 0;
     var mouseY = 0;
     var slowUntil = 0;
     var slowPlayerOn = -1;
+    var player = JSON.parse(JSON.stringify(player)) as player;
     g_upgrades = upgrades;
     const [level, setLevel]  = useState(0);
     const [lose, setLose]  = useState(false);
     const lowerCanvas = useRef<HTMLCanvasElement>(null);
     const upperCanvas = useRef<HTMLCanvasElement>(null);
+    if(level == 0){
+        totalHits = 0; // reset 
+    }
+    player.hp -= totalHits; 
+    // set up audio
 
     useEffect(function(){ 
         console.log("called");
@@ -43,13 +50,37 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
 		mouseY = e.nativeEvent.offsetY;
 	} 
     
-    
+    function count_progress(g : game) : number{
+        if(g.progress == "completed" || (g.progress.mode != "collect fixed items" && g.progress.mode != "collect items") ){
+            return 0;
+        }
+        var count = 0;
+        if(g.progress.mode == "collect fixed items"){
+            count = _.countBy(g.progress.collected).true;
+            if(count == undefined) {
+                count=0;
+            }
+        }
+        if(g.progress.mode == "collect items"){
+            count = g.progress.count;
+        }
+        return count; 
+
+    }
     function update(){
         if(lowerCanvas.current === null || upperCanvas.current === null){
             return;
         }
         lowerCanvas.current.focus();
         var time = Date.now();
+        var old_hits = g.hits;
+        var old_count = 0;
+        var old_complete = false;
+        if(g.progress !== "completed"){
+            old_count = count_progress(g);
+        } else {
+            old_complete = true;
+        }
         while(lastRendered + 1000/FPS < time ){ 
             if(g.t == slowPlayerOn){
                 g.p.speed *= 0.5;
@@ -57,12 +88,28 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
             var tick_result = g.tick(mouseX, mouseY);
             if(tick_result.win){
                 setLevel(level + 1);
+                totalHits += g.hits;
                 return; 
             }
             lastRendered += 1000/FPS;
             if(slowUntil > time){
                 lastRendered += 1000/FPS;  
             } 
+        }
+        // play new sounds
+
+        //@ts-ignore
+        if(window.muted == false){
+            if(g.hits > old_hits ){
+                new Audio("hit.mp3").play();
+            }
+            if(count_progress(g) > old_count){
+                new Audio("coin.mp3").play();
+            };
+            
+            if(old_complete == false && g.progress == "completed"){
+                new Audio("complete.mp3").play();
+            };
         }
         //console.log([mouseX, mouseY, g.playerX, g.playerY]);
         var ctx = lowerCanvas.current.getContext("2d");
@@ -73,9 +120,9 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
         }
         ctx.clearRect(0,0,2000,1000);
         ctxu.clearRect(0,0,2000,1000);
-        if(lastRendered > Date.now()){
+        if(lastRendered > Date.now() && g.t == 0){
             console.log("A");
-            c.drawText(ctx,  "Get Ready!",370, 350); 
+            c.drawText(ctx, level == 0 ? "Mouse to move, you cannot attack" :  "Get Ready!",370, 350); 
         }
         for(var wall of g.walls){
             c.drawLine(ctx, wall[0], wall[1], wall[2], wall[3]);
@@ -110,7 +157,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
         // draw the goals
         if(g.progress !== "completed") {
             if(g.goal.mode == "survive" && g.progress.mode == "survive"){
-                var s = "Survive " + g.t + "/" + g.goal.time
+                var s = "Goal : Survive " + g.t + "/" + g.goal.time
                 c.drawText(ctxu, s, 10, textYCoords )
             }
             if(g.goal.mode == "chase orb" && g.progress.mode == "chase orb"){
@@ -118,7 +165,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
                 c.drawImage(ctx, img, g.progress.x + offsetX, g.progress.y + offsetY)
                 c.drawCircle(ctx, g.progress.x, g.progress.y, g.goal.size, "green");
                 var s = g.progress.time + "/" + g.goal.time
-                c.drawText(ctxu, "Stay in the circle " +s, 10, textYCoords )
+                c.drawText(ctxu, "Goal : Stay in the circle " +s, 10, textYCoords )
             }
             if(g.goal.mode == "collect items" && g.progress.mode == "collect items"){
                 if(g.t >= g.progress.spawn_time){
@@ -126,7 +173,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
                     c.drawImage(ctx, img, g.progress.x + offsetX, g.progress.y + offsetY);
                 }
                 var s = g.progress.count + "/" + g.goal.amount
-                c.drawText(ctxu,"Collect items "+ s, 10, textYCoords )
+                c.drawText(ctxu,"Goal : Collect coins "+ s, 10, textYCoords )
             }            
             if(g.goal.mode == "collect fixed items" && g.progress.mode == "collect fixed items"){
                 var allSoFar = true; 
@@ -154,16 +201,17 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
                     collected = 0;
                 }
                 var s = collected + "/" + g.goal.locations.length
-                c.drawText(ctxu,"Collect items "+ s, 10, textYCoords )
+                c.drawText(ctxu,"Goal : Collect coins "+ s, 10, textYCoords )
             }            
             if(g.goal.mode == "hit dummy" && g.progress.mode == "hit dummy"){
                 var [img, offsetX, offsetY] = g.goal.img;
                 c.drawImage(ctx, img, g.goal.x+offsetX,  g.goal.y + offsetY);
                 var s = g.progress.count + "/" + g.goal.amount
-                c.drawText(ctxu, "Make enemy bullets hit the object "+s, 10, textYCoords )
+                c.drawText(ctxu, "Goal : Make enemy bullets hit the dummy "+s, 10, textYCoords )
+                c.drawText(ctx, "dummy", g.goal.x-25, g.goal.y-20); 
             }
         } else { 
-            c.drawText(ctxu, "Enter the door!", 10, textYCoords )
+            c.drawText(ctxu, "Goal : Enter the door!", 10, textYCoords )
         }
         //draw the end door 
         if(g.end_door !== undefined){
@@ -176,8 +224,18 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
         var playerInvImg : string = "images/playerInv.png"; 
         c.drawImage(ctx, isInv ? playerInvImg : playerImg, g.playerX-15, g.playerY-15);
 
-        c.drawText(ctxu, "HP " + (g.p.hp  - g.hits) +"/" + g.p.hp, 500, textYCoords);
-        c.drawText(ctxu, JSON.stringify(upgrades), 300, textYCoords+40);
+        c.drawText(ctxu, "HP " + (g.p.hp  - g.hits), 500, textYCoords);
+        var upgrades_string = "";
+        if(upgrades[0]) {
+            upgrades_string += "Slow Time (Q) "
+        }
+        if(upgrades[1]) {
+            upgrades_string += "Speed Up (W) "
+        }
+        if(upgrades[2]) {
+            upgrades_string += "Invincible (E) "
+        }
+        c.drawText(ctxu, upgrades_string, 300, textYCoords+40);
 
         if(g.p.hp <= g.hits){
             setLose(true);
@@ -200,12 +258,13 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
             g.last_hit = g.t + 200;
             upgrades[2] = false; 
         }
+
     }
     return <>
     {/* need to call lowerCanvas.current.focus(); so handlePress listener will work */}
         <BgImg img={Math.random() > 0.5 ? "images/background.png" : "images/background2.png"}/>
-        <canvas width={WIDTH} height={80} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={upperCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
-        <canvas tabIndex={0} width={WIDTH} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:80, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={lowerCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
+        <canvas width={WIDTH} height={100} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={upperCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
+        <canvas tabIndex={0} width={WIDTH} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:100, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={lowerCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
     </>
 }
 

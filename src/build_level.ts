@@ -17,7 +17,7 @@ const standard_goals : Record<goal_type, goal>= {
     "survive" : {mode : "survive", time : 0},
     "chase orb" : {mode:"chase orb", size:20, img:["images/insect.png", -10, -10] , time:200, waypoints : [[100,100], [100, 600], [600, 600], [600, 100]], speed:50},
     "collect items" : {mode:"collect items", amount:10, img:["images/coin.png", -10, -10], spawn_delay:10, spawn_rect:[0,0,600,600], size:20},
-    "collect fixed items" : {mode:"collect fixed items", locations:[], sequential:false, spawn_delay:0, img:["images/coin.png",-10,-10] , collected_img:["images/f/5 52.png", -10, -10], size:20},
+    "collect fixed items" : {mode:"collect fixed items", locations:[], sequential:false, spawn_delay:0, img:["images/coin.png",-10,-10] , collected_img:["images/coin2.png", -10, -10], size:20},
     "hit dummy" : {mode:"hit dummy", img:["images/dummy.png", -20, -20], x:400, y:400, amount:10, size:20}
 }
 
@@ -75,7 +75,7 @@ var stationary : enemy = {
     y:0,
     birthday:0,
     name: "",
-    image : "images/f/3 1.png", 
+    image : "images/", 
     img_offset : [-15, -15],  
     speed : 0,
     mode : "pursuit",
@@ -89,7 +89,7 @@ var boom : enemy = {
     y:0,
     birthday:0,
     name: "",
-    image : "images/f/5 52.png", 
+    image : "BAD_IMAGE", 
     img_offset : [-15, -15],
     lifespan:1 ,  
     speed : 0,
@@ -216,9 +216,9 @@ function exploder_enemy(lifespan : number, bullets : number, warning ?: number )
 
 var burster_enemy = exploder_enemy(102, 12, 73) as transforming_enemy;
 
-burster_enemy.behaviors[0][1].image = "images/f/0 7.png";
-burster_enemy.behaviors[1][1].image = "images/f/0 92.png";
-burster_enemy.behaviors[2][1].image = "images/f/0 92.png";
+burster_enemy.behaviors[0][1].image = "images/bomb.png";
+burster_enemy.behaviors[1][1].image = "images/bomb2.png";
+burster_enemy.behaviors[2][1].image = "images/bomb2.png";
 
 var cloning_enemy : enemy = clone(move_towards);
 cloning_enemy.spawn_on_death = [clone(random_pursue_enemy), clone(shooter)]
@@ -416,6 +416,7 @@ var levels = [raining_fire_level, random_pursue_level, shooter_level,chase_orb_l
 
 
 function generateLevel(seed : string, diff : number, width : number = 700, height : number = 600): levelData{
+    
     var types = ["survive","chase orb","collect fixed items","hit dummy"] 
     if(diff>= 4){
         types.push("collect items");
@@ -560,7 +561,9 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
 
     }
 
-
+    if(JSON.stringify(level).indexOf("BAD IMAGE") !== -1){
+        throw "bad image used"
+    }
     return level;
 }
 function generateGame(seed : string , width : number,height:number, english_words : string[], alien_words : string[]): [levelData[][], string[][], Record<string, string>,Record<string, string> , number[] ]{
@@ -571,9 +574,9 @@ function generateGame(seed : string , width : number,height:number, english_word
     var strings : string[][] = []
     var difficulty_lst = [
         5,4,4,4,5,
-        4,3,3,3,4,
-        2,1,1,1,2,
-        4,3,3,3,4,
+        4,3,2,3,4,
+        3,1,1,1,3,
+        4,3,2,3,4,
         5,4,4,4,5
     ]
     for(var i = 0 ; i < 25; i ++){

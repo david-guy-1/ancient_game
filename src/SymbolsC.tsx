@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 //@ts-ignore
 import * as d from "./draw_symbols.ts";
 import valid_symbols from "./symbols.json"; 
-import { WIDTH, HEIGHT } from "./constants.ts";
 import { puzzleType } from "./typedefs";
 //@ts-ignore
 import * as c from "./canvasDrawing.js";
@@ -89,15 +88,15 @@ function SymbolsC(props : any){
                     var w1 = "zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve".split(",")[n1]
                     var w2 = "zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve".split(",")[n2]
                     var s2 =  s == "+" ? "plus" : "minus";
-                    addMarkings(ctx, 50, 50+80*i, ETA[w1]);
+                    addMarkings(ctx, 50, 90+80*i, ETA[w1]);
                     
-                    addMarkings(ctx, 200, 50+80*i, ETA[s2]);
-                    addMarkings(ctx, 350, 50+80*i, ETA[w2]);
+                    addMarkings(ctx, 200, 90+80*i, ETA[s2]);
+                    addMarkings(ctx, 350, 90+80*i, ETA[w2]);
                 }
                 for(var i=0; i<numbers.length;i++){
                     var number = numbers[i];
                     for(var j=0 ; j < number; j++){
-                        c.drawLine(ctx, 550+10*j, 50+80*i, 550+10*j, 90+80*i, "black", 3)   
+                        c.drawLine(ctx, 550+10*j, 90+80*i, 550+10*j, 130+80*i, "black", 3)   
                     }
                 }
                 break;
@@ -131,8 +130,8 @@ function SymbolsC(props : any){
                 var arrows = puzzle.arrows;
                 for(var i=0; i < arrows.length;i++){
                     var [str,amt] = arrows[i];
-                    addMarkings(ctx, 50, 50+80*i, ETA[str]);
-                    addMarkings(ctx, 250, 50+80*i, ETA["zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve".split(",")[amt]]);
+                    addMarkings(ctx, 50, 90+80*i, ETA[str]);
+                    addMarkings(ctx, 250, 90+80*i, ETA["zero,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve".split(",")[amt]]);
                 }
                 break;
         }
@@ -238,8 +237,8 @@ function SymbolsC(props : any){
                 break
                 case 1 :  // numbers
                 for(var i=0; i<numbers.length; i++){
-                    var el = <img src="images/minus.png" style={{position:"absolute", top:50+80*i, left:700,width:50, height:50}} onClick={function(this:number){numbers[this]--; if(numbers[this] < 0){numbers[this] = 12;}; moveMade()}.bind(i)}/>
-                    var e2 = <img src="images/plus.png" style={{position:"absolute", top:50+80*i, left:750,width:50, height:50}} onClick={function(this:number){numbers[this]++; if(numbers[this] == 13){ numbers[this] = 0};moveMade()}.bind(i)}/>
+                    var el = <img src="images/minus.png" style={{position:"absolute", top:90+80*i, left:700,width:50, height:50}} onClick={function(this:number){numbers[this]--; if(numbers[this] < 0){numbers[this] = 12;}; moveMade()}.bind(i)}/>
+                    var e2 = <img src="images/plus.png" style={{position:"absolute", top:90+80*i, left:750,width:50, height:50}} onClick={function(this:number){numbers[this]++; if(numbers[this] == 13){ numbers[this] = 0};moveMade()}.bind(i)}/>
                     lst.push(el);
                     lst.push(e2);
                 }
@@ -262,7 +261,7 @@ function SymbolsC(props : any){
             return lst;
         }()
     }
-    <canvas width={1200} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/>
+    <canvas width={1200} height={700} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/>
     <h3 style={{position:"absolute", top:0, left:200, zIndex:0}} >Hover over text for translations</h3>
     
 

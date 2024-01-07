@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 //@ts-ignore
 import * as d from "./draw_symbols.ts";
 import valid_symbols from "./symbols.json"; 
-import { WIDTH, HEIGHT } from "./constants.ts";
 import { puzzleType } from "./typedefs";
 //@ts-ignore
 import * as c from "./canvasDrawing.js";
@@ -50,6 +49,6 @@ function ExploreDone(props : any){
         }
     })
    
-    return <> <BgImg img="images/end_ins.png"/><canvas width={1200} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/> <span style={{position:"absolute", top:600,left:400, width:400,height:50,backgroundColor:"darkred", zIndex:0,color:"white",fontSize:30}} onClick={() => callback()}>Go back </span></>
+    return <> <BgImg img="images/end_ins.png"/><canvas width={1200} height={700} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:-1}}   ref={lowerCanvas}/> <span style={{position:"absolute", top:600,left:400, width:400,height:50,backgroundColor:"darkred", zIndex:0,color:"white",fontSize:30}} onClick={() => callback()}>Go back </span></>
 }
 export default ExploreDone;

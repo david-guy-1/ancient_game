@@ -17,13 +17,13 @@ function hover(x : [number,number], levels : levelData[][] , symbols : string[][
     for(var item of symbols[index]){
         d.draw_markings(ctx, 30, 100+50*i, item)
         if(obtained[item] == true){
-            c.drawText(ctx, "✓", 0, 150+50*i+30,undefined, "green")
+            c.drawText(ctx, "✓", 0, 100+50*i+30,undefined, "green")
         }
         i++;
     }
     c.drawText(ctx, "Click to enter" , 0, 400)
 }
-function LevelSelector({levels,symbols, callback,stateCallback,obtained}: {levels : levelData[][], symbols : string[][], callback : Function,stateCallback:Function,obtained : Record<string ,boolean>}){
+function LevelSelector({seed, levels,symbols, callback,stateCallback,obtained}: {seed : string , levels : levelData[][], symbols : string[][], callback : Function,stateCallback:Function,obtained : Record<string ,boolean>}){
     return <><table style={{position:"absolute", left:0, top:0,width:600,height:600}} ><tbody>
     {function() { 
         var lst = []
@@ -44,12 +44,13 @@ function LevelSelector({levels,symbols, callback,stateCallback,obtained}: {level
     }()}
 
     </tbody></table>
+    <p  style={{position:"absolute", left:200, top:610, fontSize:20, color:"black"}} >Hint : levels closer to the center are easier</p>
     
     <canvas style={{position:"absolute", left:700, top:0}} height={600} width={200} id="Canvas"></canvas>
     <br />
     <button style={{position:"absolute", left:700, top:500}}  onClick={() => stateCallback("puzzle")}>Read inscription</button>
     <button style={{position:"absolute", left:700, top:550}}  onClick={() => stateCallback("upgrades")}>Upgrades</button>
-    
+    <p style={{position:"absolute", left:1000, top:100, width:200, overflowWrap:"anywhere", color:"black"}}>Seed:{seed}</p>
     <BgImg img="images/selection_bg.png" />
     </>
 }
