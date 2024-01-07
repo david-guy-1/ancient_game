@@ -140,7 +140,6 @@ function App() {
         throw "Symbol state but undefined level";
       }
       return <>
-      <button onClick={() => setState("trueWin")} style={{zIndex:3,position:"absolute"}}>asasda</button>
       <LevelSelector seed={seed} levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} stateCallback={(e : string) => setState(e)} obtained={learned_translations} /></>
     case "seed":
       return <><BgImg img="images/mainMenu.png"/>
