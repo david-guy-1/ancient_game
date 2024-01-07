@@ -154,7 +154,7 @@ type levelData = {
     player_x : number,
     player_y : number
     goal : goal,
-    door_img : [string, number, number]
+    door_img : [string, number, number],
 }
 
 type tickOutput = {

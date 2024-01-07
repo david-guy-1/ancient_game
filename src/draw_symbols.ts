@@ -41,7 +41,6 @@ type shape = {
     "/" : diagonal_choice
 }
 export function draw(ctx : CanvasRenderingContext2D, shape : shape , xn : number, yn : number ){
-    console.log(yn);
     var x = 2 + xn
     var y = 5  + yn
     for(var i=0; i < 3; i++){

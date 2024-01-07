@@ -220,18 +220,19 @@ function factorial(n){
 }
 
 export function shuffle(lst, seed){
-	var lst2 = Array.from(lst);
-	var output = [];
-	var counter = randint(0, factorial(lst2.length), seed);
-	while(lst2.length >0){
-		var count = 0;
-		var nM1fact= factorial(lst2.length-1)
-		while(counter >= nM1fact){
-			count += 1;
-			counter -= nM1fact;
-		}
-		output.push(lst2.splice(count, 1)[0])
+    var lst2 = Array.from(lst);
 	
-	}
-	return output;
+    if(lst2.length == 0){
+        return []
+    }
+    var output = []
+    var it = 0;
+    while(lst2.length > 0){
+        var index = randint(0, lst2.length, seed + " " + it);
+        var el = lst2.splice(index, 1);
+        output.push(el[0]);
+        it ++;
+    }
+    return output 
+	
 }

@@ -30,14 +30,17 @@ function ExploreDone(props : any){
     var ATE: Record<string, string> = props.ATE;
     var symbols : string[] = props.symbols;
     var callback : Function = props.callback;
-
+    var token : boolean = props.token;
     const lowerCanvas = useRef<HTMLCanvasElement>(null);
 
 
     useEffect(() =>{
         var ctx = (lowerCanvas.current as HTMLCanvasElement).getContext("2d") as CanvasRenderingContext2D; 
         c.drawText(ctx, "You finished exploring this chamber", 100, 100);
-        c.drawText(ctx, "You learned the following new words from inscriptions in this chamber", 100, 130);
+        if(token){
+            c.drawText(ctx, "You received an upgrade token, spend it to buy an upgrade.", 100, 130);
+        }
+        c.drawText(ctx, "You learned the following new words from inscriptions in this chamber", 100, 160);
         var i=0
         for(var item of symbols){
             draw_markings(ctx, 50, 170 + 85*i, item);

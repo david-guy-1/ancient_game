@@ -1,7 +1,7 @@
 import { bullet, bullet_fire, charger, enemy, fire_breaths, goal, levelData, normal_enemy, spawner, transforming_enemy } from "./typedefs";
 //@ts-ignore
 import * as r from "./random.js";
-import _ from "lodash";
+import _, { shuffle } from "lodash";
 
 
 
@@ -18,7 +18,7 @@ const standard_goals : Record<goal_type, goal>= {
     "chase orb" : {mode:"chase orb", size:20, img:["images/insect.png", -10, -10] , time:200, waypoints : [[100,100], [100, 600], [600, 600], [600, 100]], speed:50},
     "collect items" : {mode:"collect items", amount:10, img:["images/coin.png", -10, -10], spawn_delay:10, spawn_rect:[0,0,600,600], size:20},
     "collect fixed items" : {mode:"collect fixed items", locations:[], sequential:false, spawn_delay:0, img:["images/coin.png",-10,-10] , collected_img:["images/f/5 52.png", -10, -10], size:20},
-    "hit dummy" : {mode:"hit dummy", img:["images/f/5 5.png", -10, -10], x:400, y:400, amount:10, size:20}
+    "hit dummy" : {mode:"hit dummy", img:["images/dummy.png", -20, -20], x:400, y:400, amount:10, size:20}
 }
 
 
@@ -234,6 +234,16 @@ var spawner : spawner = {
     name:"chaser spawner"
 }   
 
+var shooter_spawner : spawner = {
+    enemy : clone(shooter),
+    interval : 150,
+    start_time : 1,
+    location : {mode : "random",rect :[200, 200, 600, 600]},
+    name:"chaser spawner"
+}   ;
+
+((shooter_spawner.enemy as normal_enemy).bullet as bullet_fire).delay = 32;
+
 var fire_spawner : spawner = {
     enemy : clone(fire_boom),
     interval : 200,
@@ -301,7 +311,7 @@ var basic_level : levelData = {
     spawners : [],
     player_x : 400,
     player_y :400, 
-    door_img : ["images/door.png",-15,-15]
+    door_img : ["images/door.png",-15,-15],
 }
 
 
@@ -335,7 +345,7 @@ var random_pursue_level : levelData = {
     spawners : [random_pursue_spawner, random_pursue_spawner_2],
     player_x : 400,
     player_y :400, 
-    door_img : ["images/door.png",-15,-15]
+    door_img : ["images/door.png",-15,-15],
 }
 
 
@@ -346,7 +356,7 @@ var raining_fire_level : levelData = {
     "enemies" : [],
     player_x : 400,
     player_y :400, 
-    door_img : ["images/door.png",-15,-15]    
+    door_img : ["images/door.png",-15,-15]  ,
 }
 
 var bomb_level : levelData = clone(basic_level);
@@ -383,7 +393,7 @@ var shooter_level : levelData = {
     spawners : [],
     player_x : 400,
     player_y :400, 
-    door_img : ["images/door.png",-15,-15]    
+    door_img : ["images/door.png",-15,-15]  ,
 
 }
 console.log(cloning_enemy);
@@ -406,7 +416,13 @@ var levels = [raining_fire_level, random_pursue_level, shooter_level,chase_orb_l
 
 
 function generateLevel(seed : string, diff : number, width : number = 700, height : number = 600): levelData{
-    var type = r.choice( ["survive","chase orb","collect items","collect fixed items","hit dummy"], seed + "goal type") as goal_type
+    var types = ["survive","chase orb","collect fixed items","hit dummy"] 
+    if(diff>= 4){
+        types.push("collect items");
+    }
+
+    var type= r.choice(types , seed + "goal type") as goal_type
+    //var type = r.choice( ["collect fixed items"], seed + "goal type") as goal_type
     var goal : goal = clone(standard_goals[type]) as goal;
 
     // adjust goal based on difficulty
@@ -434,8 +450,10 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
             }
         break;
         case "collect fixed items":
-            if(diff > 2){
+            if(diff >= 4){
                 goal.sequential = r.randint(0, 2, seed + " fixed seq") == 1;
+            } else {
+                goal.sequential = false;
             }
             goal.collected_img=undefined;
             var nItems : number = r.randint(5 + diff, 8+diff, seed + " fixed nItems")
@@ -445,7 +463,7 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
                 var x= r.randint(50, width-50, seed + " placing fixed item x" + i + " " + tries);
                 var y= r.randint(50, height-50, seed + " placing fixed item y" + i+ " " + tries);
                 if(edge){
-                    var pass = (Math.abs(x) < 100 || Math.abs(x - width) < 100) &&  (Math.abs(y) < 100 || Math.abs(y - height) < 100) 
+                    var pass = (Math.abs(x) < 100 || Math.abs(x - width) < 100) ||  (Math.abs(y) < 100 || Math.abs(y - height) < 100) 
                     if(!pass){
                         i--;
                         tries++;
@@ -472,7 +490,11 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
     }
     var level = clone(basic_level) as levelData;
     level.goal = goal;
-
+    if(level.goal.mode=="hit dummy"){
+        var newsp = clone(shooter_spawner) as spawner;
+        newsp.location = {"mode":"random", 'rect':[0, 0, width, height]};
+        level.spawners.push(newsp)
+    }
     // decide enemies and spawners
     var items : string[] = ["burster spawner", "chaser", "shooter", "raining fire", "pursue spawner"];
     var added : string[] = [];
@@ -540,7 +562,7 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
 
     return level;
 }
-function generateGame(seed : string , width : number,height:number, english_words : string[], alien_words : string[]): [levelData[][], string[][], Record<string, string>,Record<string, string> ]{
+function generateGame(seed : string , width : number,height:number, english_words : string[], alien_words : string[]): [levelData[][], string[][], Record<string, string>,Record<string, string> , number[] ]{
     if(english_words.length != alien_words.length ){
         throw "list of words have different lengths";
     }
@@ -564,6 +586,10 @@ function generateGame(seed : string , width : number,height:number, english_word
         strings.push([]);
     } 
     // for each alien word, choose 2 rooms to put it into
+    for(var i=0; i<25; i++){
+        var word = r.choice(alien_words , seed + " choose word to put in room " + i); 
+        strings[i].push(word);
+    }
     var add_tries = 0;
     for(var word of alien_words){
         var successful_adds = 0;
@@ -572,6 +598,9 @@ function generateGame(seed : string , width : number,height:number, english_word
             add_tries ++; 
             var n1 = r.randint(0, 25, seed + word + " a " + add_tries);
             if(strings[n1].length >= 4){
+                continue;
+            }
+            if(strings[n1].indexOf(word) !== -1){
                 continue;
             }
             strings[n1].push(word);
@@ -585,7 +614,14 @@ function generateGame(seed : string , width : number,height:number, english_word
         english_to_alien[words[i]] = alien_words[i];
         alien_to_english[ alien_words[i]] = words[i];
     }
-    return [lst, strings, english_to_alien, alien_to_english];
+    var token_lst : number[]= []
+    var random_lst : number[]= []
+    for(var i = 0; i < 25; i++){
+        token_lst.push(i);
+    }
+    token_lst = r.shuffle(token_lst, seed + "token");
+    
+    return [lst, strings, english_to_alien, alien_to_english, token_lst.slice(0,4)];
 }
 
 export default generateGame

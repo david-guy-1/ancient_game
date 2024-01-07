@@ -44,12 +44,16 @@ var good_symbols : string []  = [];
 var bad_symbols : string[] = [];
 var images : string[][] = [];
 
+// upgrades : slow down, speed up, invincibility, extra HP
+var upgrades : boolean[] = [false, false, false, false ]
+var tokens = 0; 
 var index : number = 0;
+var token_levels: number[] = []; 
 function App() {  
   const [state, setState] = useState("seed");
+  const [render, reRender] = useState(true);
   const [level, setLevel] = useState<levelData[] | undefined>(undefined);
   const [end_progress, progress_end] = useState(0);
-  console.log(JSON.stringify(levels));
   function startGame(e: [string, string]){
     if(levels == undefined){
       throw "Start game called with undefined level";
@@ -65,14 +69,19 @@ function App() {
         throw "Level state but undefined level";
       }
       return (
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:10, hp:5}}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:10,hp: upgrades[3] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
        )
     case "win":
         for(var word of (symbols as string[][])[index]){
           learned_translations[word ] =true
         }
-        //return <ExploreDone symbols={(symbols as string[][])[index]} ATE={alien_to_english} callback={() => setState("select")}></ExploreDone>
-        return <ExploreDone symbols={["green","four","star"].map((x) =>english_to_alien == undefined ? "" : english_to_alien[x])} ATE={alien_to_english} callback={() => setState("select")}></ExploreDone>
+        var got_token = token_levels.indexOf(index);
+        if(got_token !== -1){
+          token_levels.splice(got_token, 1);
+          tokens ++;
+        }
+        return <ExploreDone symbols={(symbols as string[][])[index]} token={got_token != -1} ATE={alien_to_english} callback={() => setState("select")}></ExploreDone>
+
         
     case "lose":
       return <>You lose! <button onClick={() => setState("select")}> Play again </button></>
@@ -82,10 +91,12 @@ function App() {
       if(levels == undefined || symbols == undefined){
         throw "Symbol state but undefined level";
       }
-      return <LevelSelector levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} readCallback={() => setState("puzzle")} obtained={learned_translations} />
+      return <LevelSelector levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} stateCallback={(e : string) => setState(e)} obtained={learned_translations} />
     case "seed":
       return <>Enter a seed, or leave blank for random seed<br /><textarea id="seeder"></textarea><br /><button onClick={() => {
         seed = (document.getElementById("seeder") as HTMLTextAreaElement).value;
+        upgrades = [false, false, false, false ]
+        tokens = 0; 
         // choose alien words
         learned_translations = {}; 
         var len = WORDS.length;
@@ -103,11 +114,12 @@ function App() {
             }
           }
           alien_words.push(s);
-          learned_translations[s] = true;
-          console.log(s);
+          learned_translations[s] = false;
         }
         // make a level
-        [levels,symbols,english_to_alien, alien_to_english] = generateGame(seed + "game", WIDTH, HEIGHT, JSON.parse(JSON.stringify(WORDS)), alien_words);
+        [levels,symbols,english_to_alien, alien_to_english, token_levels] = generateGame(seed + "game", WIDTH, HEIGHT, JSON.parse(JSON.stringify(WORDS)), alien_words);
+
+        console.log(token_levels);
         // get final puzzle here
         puzzle = generatePuzzle(seed + " puzzle");
         var words = r.shuffle("leaf,star,wand,book,flower,circle,ring,gem".split(","),seed + " words ");
@@ -135,6 +147,27 @@ function App() {
           return <></>
         }
         return <SymbolsC ETA={english_to_alien} ATE={alien_to_english} seed={seed} LT={learned_translations} puzzle={puzzle} progress={end_progress} backCallback={() => setState("select")}progress_callback={() => progress_end(end_progress+1)} GS={good_symbols} BS={bad_symbols} IM={images}/>
+      case "upgrades":
+        return <>
+          <h3>Buy upgrades</h3><button onClick={() => setState("select") }>Go back</button><br />
+          <span>You have {tokens} tokens</span>
+          {
+            function(){
+              var lst  =[];
+              var upStrings = ["slow time", "speed up", "invincibility", "extra health"];
+              var upDesc = ["Press Q to slow down time for a bit", "Press W to give yourself extra speed", "Press E to give yourself temporary invincibility", "50 HP instead of 40"]
+              for(var i=0; i < 4; i++){
+                lst.push(<><h3>{upStrings[i]}{ tokens == 0 ? <button>Can't afford</button>: upgrades[i] ? <button>Already bought</button> :
+                <button onClick={function(this:number){upgrades[this] = true;tokens--; reRender(!render)}.bind(i)}>Buy </button>}</h3>
+                <span>{upDesc[i]}</span><br />
+                <br /></>) 
+              }
+              return lst; 
+            }()
+          }
+        </>
+      default:
+        return <>Unknown type {state} </>
   }
 }
 

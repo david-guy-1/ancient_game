@@ -21,7 +21,7 @@ function hover(x : [number,number], levels : levelData[][] , symbols : string[][
     }
 
 }
-function LevelSelector({levels,symbols, callback,readCallback,obtained}: {levels : levelData[][], symbols : string[][], callback : Function,readCallback:Function,obtained : Record<string ,boolean>}){
+function LevelSelector({levels,symbols, callback,stateCallback,obtained}: {levels : levelData[][], symbols : string[][], callback : Function,stateCallback:Function,obtained : Record<string ,boolean>}){
     return <><table style={{position:"absolute", left:0, top:0,width:600,height:600}} ><tbody>
     {function() { 
         var lst = []
@@ -44,7 +44,8 @@ function LevelSelector({levels,symbols, callback,readCallback,obtained}: {levels
     </tbody></table>
     <canvas style={{position:"absolute", left:700, top:0}} height={600} width={200} id="Canvas"></canvas>
     <br />
-    <button style={{position:"absolute", left:700, top:500}}  onClick={() => readCallback()}>Read inscription</button>
+    <button style={{position:"absolute", left:700, top:500}}  onClick={() => stateCallback("puzzle")}>Read inscription</button>
+    <button style={{position:"absolute", left:700, top:550}}  onClick={() => stateCallback("upgrades")}>Upgrades</button>
     </>
 }
 

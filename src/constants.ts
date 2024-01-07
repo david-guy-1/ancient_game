@@ -1,4 +1,4 @@
-export const WIDTH = 700;
+export const WIDTH =1300;
 export const HEIGHT = 600;
 export const FPS = 40;
 

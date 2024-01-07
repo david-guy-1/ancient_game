@@ -450,7 +450,7 @@ class game{
 
         // filter out things
         
-        var [stayed_bullets, destroyed_bullets] = dual_filter(this.bullets, b => b.x > 0 && b.x < 1000 && b.y > 0 && b.y < 1000 && b.name.indexOf("disabled") === -1);
+        var [stayed_bullets, destroyed_bullets] = dual_filter(this.bullets, b => b.x > 0 && b.x < WIDTH && b.y > 0 && b.y < HEIGHT && b.name.indexOf("disabled") === -1);
         // for a transforming enemy , if any of its behaviours are disabled, the entire thing is disabled.
 
         function is_enemy_disabled(x : enemy, t : number){
