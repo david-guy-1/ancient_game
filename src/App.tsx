@@ -116,7 +116,7 @@ function App() {
       }
       return (
         <>
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:10,hp: upgrades[3] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:17,hp: upgrades[3] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
         </>
        )
     case "win":

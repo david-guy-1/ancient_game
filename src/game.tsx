@@ -152,6 +152,7 @@ class game{
         this.progress.count += 1;
     }
     calculateMoveDirection(mode : move_mode, enemyX : number, enemyY:number, enemySpeed :  number, playerX : number, playerY : number) : [number, number] {
+
         if(mode == "pursuit"){
             var vector = [playerX - enemyX, playerY - enemyY]
             var length =  Math.sqrt(Math.pow(vector[0],2) + Math.pow(vector[1] , 2) ); 
@@ -161,6 +162,7 @@ class game{
             }
             return l.normalize(vector,  enemySpeed) as [number, number] ; 
         }
+
         if(mode[0] == "random"){
             var d = mode[1];
             if(d == "random"){
@@ -309,6 +311,7 @@ class game{
         for(var s of this.spawners){
             if(this.t >= s.start_time && this.t % s.interval == s.start_time % s.interval){
                 // spawn new enemy 
+                var e = JSON.parse(JSON.stringify(s.enemy)) as enemy;
                 var x = 0;
                 var y = 0; 
                 if(Array.isArray(s.location)){
@@ -339,7 +342,33 @@ class game{
                     x = Math.random() * (brx - tlx) + tlx;
                     y = Math.random() * (bry - tly) + tly;
                 }
-                this.spawn_enemy(s.enemy, x, y);
+                // spawner makes enemies that move towards a certain location
+                if(s.towards != undefined){
+                    var tx =0
+                    var ty =0
+                    var offsetX =  WIDTH * (Math.random() * 0.2 - 0.1)
+                    var offsetY =  HEIGHT * (Math.random() * 0.2 - 0.1)
+                    if(s.towards == "center"){
+                        tx = WIDTH/2 + offsetX;
+                        ty = HEIGHT/2 + offsetY;
+                    }
+                    if(s.towards == "player"){
+                        tx = this.playerX + offsetX
+                        ty = this.playerY + offsetY;
+                    }
+                    console.log([tx, ty]);
+                    if(e.type == "normal"){
+                        e.mode = ["location_mover", tx, ty];
+                    } 
+                    if(e.type == "transforming"){
+                        for(var f of e.behaviors.map((x) => x[1])){
+                            if(f.type == "normal"){
+                                f.mode = ["location_mover", tx, ty];
+                            }
+                        }
+                    }
+                }
+                this.spawn_enemy(e, x, y);
             }
             
         }

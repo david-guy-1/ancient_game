@@ -164,7 +164,7 @@ export function get_number(seed) {
 	if(seenSeeds.has(seed) && seed.indexOf("determiner") == -1){ 
 	// determiners (deciding if we can put items there without being in the same place as a block) 
 	// is supposed to be called multiple times.
-		throw new Error("seen this seed" + " " + seed);
+	//	throw new Error("seen this seed" + " " + seed);
 	}
 	seenSeeds.add(seed);
     //extract first 12 digits and use it as a number

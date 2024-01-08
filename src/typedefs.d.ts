@@ -1,4 +1,4 @@
-import { DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_FORM_ACTIONS, DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_REACT_NODES } from "react"
+import {} from "react";
 
 type wall = [number, number, number, number]
 
@@ -96,6 +96,7 @@ type spawner = {
     start_time : number
     location : [number, number]  | {mode : "random", rect : [number, number,number, number]} | "random edge"
     name : string 
+    towards ?:  "center" | "player"
     end_time ?: number
 
 }
