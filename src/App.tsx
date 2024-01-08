@@ -116,7 +116,7 @@ function App() {
       }
       return (
         <>
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:17,hp: upgrades[4] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:17,hp: upgrades[4] ? 40 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
         </>
        )
     case "win":
@@ -132,7 +132,8 @@ function App() {
 
         
     case "lose":
-      return <div style={{"position":"absolute",top:0,left:0, width:1300,height:700,backgroundColor:"black",color:"white"}}>You git hit by too many bullets!<br />You retreat out of this part of the labyrinth. <br /> <button onClick={() => setState("select")}> Back </button></div>
+      return <div style={{"position":"absolute",top:0,left:0, width:1300,height:700,backgroundColor:"black",color:"white"}}>
+        <br /><br /><br /><br /><br /><br /><br />You git hit by too many bullets!<br />You retreat out of this part of the labyrinth. <br /> <button onClick={() => setState("select")}> Back </button></div>
     case "trueWin":
       return <><BgImg img="images/end.png"/><div style={{position:"absolute", left:281,top:509}}>You escaped... but to where? You don't recognize this place!<br /><button onClick={() => setState("seed")}>Back to main menu</button></div></>
     case "select":
@@ -219,7 +220,7 @@ function App() {
             function(){
               var lst  =[];
               var upStrings = ["slow time", "speed up", "invincibility", "door opener","extra health"];
-              var upDesc = ["Slow down time for a bit (Q)", "Give yourself extra speed (W)", "Temporary invincibility (E)", "Instantly opens the door, skipping the objective (R) ", "50 HP instead of 25"]
+              var upDesc = ["Slow down time for a bit (Q)", "Give yourself extra speed (W)", "Temporary invincibility (E)", "Instantly opens the door, skipping the objective (R) ", "40 HP instead of 25"]
               for(var i=0; i < 5; i++){
                 lst.push(<><h3>{upStrings[i]}{ tokens == 0 ? <button>Can't afford</button>: upgrades[i] ? <button>Already bought</button> :
                 <button onClick={function(this:number){upgrades[this] = true;tokens--; reRender(!render)}.bind(i)}>Buy </button>}</h3>
