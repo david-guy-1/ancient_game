@@ -55,8 +55,10 @@ var token_levels: number[] = [];
 
 var bgm = new Audio("output.mp3");
 
+var loadedImages = 0; 
+
 function App() {  
-  const [state, setState] = useState("seed");
+  const [state, setState] = useState("loading");
   const [render, reRender] = useState(true);
   const [level, setLevel] = useState<levelData[] | undefined>(undefined);
   const [end_progress, progress_end] = useState(0);
@@ -110,6 +112,20 @@ function App() {
   }
   
   switch(state){
+    case "loading":
+      var image_lst = ["images/background.png", "images/background2.png", "images/big_fire.png", "images/blob.png", "images/bomb.png", "images/bomb2.png", "images/bullet.png", "images/burst_turret.png", "images/chaser.png", "images/chaser_active.png", "images/coin.png", "images/coin2.png", "images/door.png", "images/down.png", "images/dummy.png", "images/egg.png", "images/end.png", "images/end_ins.png", "images/fire_boom.png", "images/fire_warn.png", "images/insect.png", "images/intro.png", "images/left.png", "images/level_img_0.png", "images/level_img_1.png", "images/level_img_2.png", "images/mainMenu.png", "images/minus.png", "images/mute.png", "images/player.png", "images/playerInv.png", "images/plus.png", "images/puzzle.png", "images/puzzlebw.png", "images/right.png", "images/selection_bg.png", "images/turret.png", "images/tutorial.png", "images/unmute.png", "images/up.png", "images/upgrades.png", "final_images/book.png", "final_images/circle.png", "final_images/flower.png", "final_images/gem.png", "final_images/leaf.png", "final_images/ring.png", "final_images/star.png", "final_images/wand.png"]
+      for(var item of image_lst){
+        var x = new Image();
+        x.src = item; 
+        x.onload = function(){
+          loadedImages ++;
+          if(loadedImages == image_lst.length){
+            setState("seed");
+          }
+        }
+      }
+      return <>Loading</>
+    break;
     case "level":
       if(level == undefined){
         throw "Level state but undefined level";

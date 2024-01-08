@@ -5,8 +5,8 @@ import { draw_markings } from "./draw_symbols";
 function Intro({words, callback}: {words  : string[], callback:Function}  ){
     var [type, setType]  = useState(0);
 
-    var images = ["images/intro.png", "images/puzzlebw.png", "images/selection_bg.png"]
-    var text = ["You're stuck in some kind of alien labyrinth","You see some symbols that might tell you how to get out. But you don't understand them.", "You see some chambers up ahead. If you explore them you might be able to decipher some of these symbols. "];
+    var images = ["images/intro.png", "images/puzzlebw.png", "images/selection_bg.png", "images/tutorial.png"]
+    var text = ["You're stuck in some kind of alien labyrinth","You see some symbols that might tell you how to get out. But you don't understand them.", "You see some chambers up ahead. If you explore them you might be able to decipher some of these symbols. ","A quick tutorial"];
     useEffect(function(){
         if(type == 1){
             var ctx = (document.getElementById("Canvas") as HTMLCanvasElement).getContext("2d") as CanvasRenderingContext2D;
@@ -24,7 +24,7 @@ function Intro({words, callback}: {words  : string[], callback:Function}  ){
     <BgImg img={images[type]} />
         <span style={{position:"absolute", top:650, left:0, width:1200, height:50, backgroundColor:"white", font:"30px",color:"black"}}>{text[type]}</span>
         <span style={{position:"absolute", top:650, left:1200, width:100, height:50, backgroundColor:"#cccccc", font:"30px"}} onClick={() => {
-            if(type == 2) {
+            if(type == images.length - 1) {
                  callback();
             } else {
                 setType(type + 1);
