@@ -256,7 +256,7 @@ function SymbolsC(props : any){
                     lst.push(<img src="images/down.png" style={{position:"absolute", top:480, left:400,width:50, height:50}} onClick={function(this:string){arrows.push(this); if(arrows.length > num_arrows) { arrows = arrows.slice(1)} ; moveMade()}.bind("down")}/>)
                     lst.push(<img src="images/left.png" style={{position:"absolute", top:440, left:360,width:50, height:50}} onClick={function(this:string){arrows.push(this); if(arrows.length > num_arrows) { arrows = arrows.slice(1)} ; moveMade()}.bind("left")}/>)
                     lst.push(<img src="images/right.png" style={{position:"absolute", top:440, left:440,width:50, height:50}} onClick={function(this:string){arrows.push(this); if(arrows.length > num_arrows) { arrows = arrows.slice(1)} ; moveMade()}.bind("right")}/>)                    
-                    lst.push(<div style={{position:"absolute", top:600, left:10, width:1200}}>{arrows.join(" ")}</div>)
+                    lst.push(<div style={{position:"absolute", top:300, left:600, width:600}}>{arrows.join(" ")}</div>)
                 break;  
             }
             return lst;

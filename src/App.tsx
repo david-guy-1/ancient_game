@@ -149,7 +149,7 @@ function App() {
         
     case "lose":
       return <div style={{"position":"absolute",top:0,left:0, width:1300,height:700,backgroundColor:"black",color:"white"}}>
-        <br /><br /><br /><br /><br /><br /><br />You git hit by too many bullets!<br />You retreat out of this part of the labyrinth. <br /> <button onClick={() => setState("select")}> Back </button></div>
+        <br /><br /><br /><br /><br /><br /><br />You got hit by too many bullets!<br />You retreat out of this part of the labyrinth. <br /> <button onClick={() => setState("select")}> Back </button></div>
     case "trueWin":
       return <><BgImg img="images/end.png"/><div style={{position:"absolute", left:281,top:509}}>You escaped... but to where? You don't recognize this place!<br /><button onClick={() => setState("seed")}>Back to main menu</button></div></>
     case "select":
