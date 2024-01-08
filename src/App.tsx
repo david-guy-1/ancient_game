@@ -47,8 +47,8 @@ var good_symbols : string []  = [];
 var bad_symbols : string[] = [];
 var images : string[][] = [];
 
-// upgrades : slow down, speed up, invincibility, extra HP
-var upgrades : boolean[] = [false, false, false, false ]
+// upgrades : slow down, speed up, invincibility,  door opener, extra HP
+var upgrades : boolean[] = []
 var tokens = 0; 
 var index : number = 0;
 var token_levels: number[] = []; 
@@ -116,7 +116,7 @@ function App() {
       }
       return (
         <>
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:17,hp: upgrades[3] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:17,hp: upgrades[4] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
         </>
        )
     case "win":
@@ -148,7 +148,7 @@ function App() {
         if(seed.length == 0){
           seed = r.sha256("" + Math.random()); 
         }
-        upgrades = [false, false, false, false ]
+        upgrades = [false, false, false, false,false ]
         tokens = 0; //debug
         // choose alien words
         learned_translations = {}; 
@@ -218,9 +218,9 @@ function App() {
           {
             function(){
               var lst  =[];
-              var upStrings = ["slow time", "speed up", "invincibility", "extra health"];
-              var upDesc = ["Press Q to slow down time for a bit", "Press W to give yourself extra speed", "Press E to give yourself temporary invincibility", "50 HP instead of 25"]
-              for(var i=0; i < 4; i++){
+              var upStrings = ["slow time", "speed up", "invincibility", "door opener","extra health"];
+              var upDesc = ["Slow down time for a bit (Q)", "Give yourself extra speed (W)", "Temporary invincibility (E)", "Instantly opens the door, skipping the objective (R) ", "50 HP instead of 25"]
+              for(var i=0; i < 5; i++){
                 lst.push(<><h3>{upStrings[i]}{ tokens == 0 ? <button>Can't afford</button>: upgrades[i] ? <button>Already bought</button> :
                 <button onClick={function(this:number){upgrades[this] = true;tokens--; reRender(!render)}.bind(i)}>Buy </button>}</h3>
                 <span>{upDesc[i]}</span>

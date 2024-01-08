@@ -684,7 +684,7 @@ function generateGame(seed : string , width : number,height:number, english_word
         token_lst.push(i);
         }
     }
-    token_lst = r.shuffle(token_lst, seed + "token").slice(0, 3);
+    token_lst = r.shuffle(token_lst, seed + "token").slice(0, 4);
     token_lst.push(12);
     
     return [lst, strings, english_to_alien, alien_to_english, token_lst ];

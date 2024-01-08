@@ -235,6 +235,9 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
         if(upgrades[2]) {
             upgrades_string += "Invincible (E) "
         }
+        if(upgrades[3]) {
+            upgrades_string += "Door Opener (R) "
+        }
         c.drawText(ctxu, upgrades_string, 300, textYCoords+40);
 
         if(g.p.hp <= g.hits){
@@ -257,6 +260,10 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
         if(e == "e" && upgrades[2]){
             g.last_hit = g.t + 200;
             upgrades[2] = false; 
+        }
+        if(e == "r" && upgrades[3]){
+            g.progress = "completed";
+            upgrades[3] = false; 
         }
 
     }
