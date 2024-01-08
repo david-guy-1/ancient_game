@@ -25,3 +25,5 @@ dist-ssr
 
 #placeholder art
 public/images/f/*.png
+
+dist.zip
