@@ -656,6 +656,9 @@ function generateGame(seed : string , width : number,height:number, english_word
     var add_tries = 0;
     for(var word of alien_words){
         var successful_adds = 0;
+        if(r.randint(0,2, seed + " add word twice" + word) == 1){ // add only one instead of two 
+            successful_adds ++; 
+        }
         while(successful_adds  < 2){
             
             add_tries ++; 
