@@ -47,7 +47,7 @@ var good_symbols : string []  = [];
 var bad_symbols : string[] = [];
 var images : string[][] = [];
 
-// upgrades : slow down, speed up, invincibility,  door opener, extra HP
+// upgrades : slow down, move enemies, invincibility,  door opener, extra HP
 var upgrades : boolean[] = []
 var tokens = 0; 
 var index : number = 0;
@@ -116,7 +116,7 @@ function App() {
       }
       return (
         <>
-        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:15, speed:17,hp: upgrades[4] ? 40 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
+        <GameDisplay  data={level} return_fn={(result: boolean ) => setState(result ? "win" : "lose")} player={{invincibility:25, speed:17,hp: upgrades[4] ? 50 : 25}}  upgrades={JSON.parse(JSON.stringify(upgrades))}/>
         </>
        )
     case "win":
@@ -141,10 +141,10 @@ function App() {
         throw "Symbol state but undefined level";
       }
       return <>
-      <LevelSelector seed={seed} levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} stateCallback={(e : string) => setState(e)} obtained={learned_translations} /></>
+      <LevelSelector tokens={tokens} seed={seed} levels={levels}  symbols = {symbols} callback={(e : [string, string]) => startGame(e)} stateCallback={(e : string) => setState(e)} obtained={learned_translations} /></>
     case "seed":
       return <><BgImg img="images/mainMenu.png"/>
-      <div style={{position:"absolute", top:200,left:300,color:"white"}}><h1>Alien Labyrinth Decipherment Escape</h1>Press M to mute/unmute<br />Note: it starts out muted, this is not a bug.<br />Enter a seed, or leave blank for random seed<br /><textarea id="seeder"></textarea><br /><button onClick={() => {
+      <div style={{position:"absolute", top:200,left:300,color:"white"}}><h1>Alien Labyrinth Decipherer</h1>Press M to mute/unmute<br />Note: it starts out muted, this is not a bug.<br />Enter a seed, or leave blank for random seed<br /><textarea id="seeder"></textarea><br /><button onClick={() => {
         seed = (document.getElementById("seeder") as HTMLTextAreaElement).value;
         if(seed.length == 0){
           seed = r.sha256("" + Math.random()); 
@@ -219,8 +219,8 @@ function App() {
           {
             function(){
               var lst  =[];
-              var upStrings = ["slow time", "speed up", "invincibility", "door opener","extra health"];
-              var upDesc = ["Slow down time for a bit (Q)", "Give yourself extra speed (W)", "Temporary invincibility (E)", "Instantly opens the door, skipping the objective (R) ", "40 HP instead of 25"]
+              var upStrings = ["slow time", "move enemies", "invincibility", "door opener","extra health"];
+              var upDesc = ["Slow down time for a bit (Q)", "Move all enemies to a corner (W)", "Temporary invincibility (E)", "Instantly opens the door, skipping the objective (R) ", "50 HP instead of 25"]
               for(var i=0; i < 5; i++){
                 lst.push(<><h3>{upStrings[i]}{ tokens == 0 ? <button>Can't afford</button>: upgrades[i] ? <button>Already bought</button> :
                 <button onClick={function(this:number){upgrades[this] = true;tokens--; reRender(!render)}.bind(i)}>Buy </button>}</h3>

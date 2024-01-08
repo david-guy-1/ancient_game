@@ -11,7 +11,7 @@ function hover(x : [number,number], levels : levelData[][] , symbols : string[][
     ctx.clearRect(0,0,1000,1000,)
     var index = x[0]*5 + x[1];
     var i=0;
-    c.drawText(ctx, "Difficulty: "  + ["","","easy","medium","hard"][levels[index].length] , 0, 30)
+    c.drawText(ctx, "Difficulty: "  + ["","","very easy","easy","medium","hard","very hard"][levels[index].length] , 0, 30)
     
     c.drawText(ctx, "Symbols in this room:" , 0, 70)
     for(var item of symbols[index]){
@@ -23,7 +23,7 @@ function hover(x : [number,number], levels : levelData[][] , symbols : string[][
     }
     c.drawText(ctx, "Click to enter" , 0, 400)
 }
-function LevelSelector({seed, levels,symbols, callback,stateCallback,obtained}: {seed : string , levels : levelData[][], symbols : string[][], callback : Function,stateCallback:Function,obtained : Record<string ,boolean>}){
+function LevelSelector({seed, levels,symbols, callback,stateCallback,obtained,tokens}: {seed : string , levels : levelData[][], symbols : string[][], callback : Function,stateCallback:Function,obtained : Record<string ,boolean>,tokens:number}){
     return <><table style={{position:"absolute", left:0, top:0,width:600,height:600}} ><tbody>
     {function() { 
         var lst = []
@@ -49,7 +49,7 @@ function LevelSelector({seed, levels,symbols, callback,stateCallback,obtained}: 
     <canvas style={{position:"absolute", left:700, top:0}} height={600} width={200} id="Canvas"></canvas>
     <br />
     <button style={{position:"absolute", left:700, top:500}}  onClick={() => stateCallback("puzzle")}>Read inscription</button>
-    <button style={{position:"absolute", left:700, top:550}}  onClick={() => stateCallback("upgrades")}>Upgrades</button>
+    <button style={{position:"absolute", left:700, top:550}}  onClick={() => stateCallback("upgrades")}>Upgrades ({tokens})</button>
     <p style={{position:"absolute", left:1000, top:100, width:200, overflowWrap:"anywhere", color:"black"}}>Seed:{seed}</p>
     <BgImg img="images/selection_bg.png" />
     </>

@@ -18,7 +18,7 @@ const standard_goals : Record<goal_type, goal>= {
     "chase orb" : {mode:"chase orb", size:20, img:["images/insect.png", -10, -10] , time:200, waypoints : [[100,100], [100, 600], [600, 600], [600, 100]], speed:50},
     "collect items" : {mode:"collect items", amount:10, img:["images/coin.png", -10, -10], spawn_delay:10, spawn_rect:[0,0,600,600], size:20},
     "collect fixed items" : {mode:"collect fixed items", locations:[], sequential:false, spawn_delay:0, img:["images/coin.png",-10,-10] , collected_img:["images/coin2.png", -10, -10], size:20},
-    "hit dummy" : {mode:"hit dummy", img:["images/dummy.png", -20, -20], x:400, y:400, amount:10, size:20}
+    "hit dummy" : {mode:"hit dummy", img:["images/dummy.png", -40, -40], x:400, y:400, amount:10, size:40}
 }
 
 
@@ -445,7 +445,7 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
         case "chase orb":
             goal.speed = 6 + 2*diff;
             goal.size = 300 - 20*diff;
-            goal.time = 200 + 40*diff; 
+            goal.time = 300 + 60*diff; 
             var choice = r.choice(["rectangular", "hourglass", "zigzag","random"], seed + "goal") as "rectangular"|"hourglass"| "zigzag"|"random";
             if(choice == "random"){
                 for(var i=0; i<10; i++){
@@ -465,7 +465,7 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
                 goal.sequential = false;
             }
             goal.collected_img=undefined;
-            var nItems : number = r.randint(5 + diff, 8+diff, seed + " fixed nItems")
+            var nItems : number = r.randint(5 + 2*diff, 8+2*diff, seed + " fixed nItems")
             var edge : boolean  = r.randint(0, 2, seed + " near edge") == 1;
             var tries = 0;
             for(var i=0; i<nItems; i++){
@@ -487,15 +487,16 @@ function generateLevel(seed : string, diff : number, width : number = 700, heigh
         break;
         case "collect items":
             goal.spawn_rect = [50, 50, width-50, height-50]; 
-            goal.amount = 5  + diff;
+            goal.amount = 5  + 2*diff;
             goal.spawn_delay = r.randint(3 + diff, 10, seed + " spawn delay ");
         break;
         case "hit dummy":
             goal.x = r.randint(50, width-50, seed + "dummy location x");
             goal.y = r.randint(50, height-50, seed + "dummy location y");
+            goal.amount = 10 + 3*diff;
         break;
         case "survive":
-            goal.time = 200 + 40*diff;
+            goal.time = 300 + 60*diff;
     }
     var level = clone(basic_level) as levelData;
     level.goal = goal;
@@ -640,7 +641,7 @@ function generateGame(seed : string , width : number,height:number, english_word
     ]
     for(var i = 0 ; i < 25; i ++){
         var this_diff = difficulty_lst[i];
-        var nLevels = Math.ceil(1 + this_diff/2);
+        var nLevels = 1 + this_diff;
         var levels : levelData[] =[];
         for(var j = 0; j < nLevels; j++){
             levels.push(generateLevel(seed + " " + i + " " + j , this_diff, width, height));
@@ -687,7 +688,7 @@ function generateGame(seed : string , width : number,height:number, english_word
         token_lst.push(i);
         }
     }
-    token_lst = r.shuffle(token_lst, seed + "token").slice(0, 4);
+    token_lst = r.shuffle(token_lst, seed + "token").slice(0, 7);
     token_lst.push(12);
     
     return [lst, strings, english_to_alien, alien_to_english, token_lst ];

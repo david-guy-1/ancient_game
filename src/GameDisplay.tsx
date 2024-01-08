@@ -208,7 +208,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
                 c.drawImage(ctx, img, g.goal.x+offsetX,  g.goal.y + offsetY);
                 var s = g.progress.count + "/" + g.goal.amount
                 c.drawText(ctxu, "Goal : Make enemy bullets hit the dummy "+s, 10, textYCoords )
-                c.drawText(ctx, "dummy", g.goal.x-25, g.goal.y-20); 
+                c.drawText(ctx, "dummy", g.goal.x-42, g.goal.y-45); 
             }
         } else { 
             c.drawText(ctxu, "Goal : Enter the door!", 10, textYCoords )
@@ -230,7 +230,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
             upgrades_string += "Slow Time (Q) "
         }
         if(upgrades[1]) {
-            upgrades_string += "Speed Up (W) "
+            upgrades_string += "Move Enemies (W) "
         }
         if(upgrades[2]) {
             upgrades_string += "Invincible (E) "
@@ -253,15 +253,25 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
             upgrades[0] = false; 
         }
         if(e == "w" && upgrades[1]){
-            g.p.speed = g.p.speed * 2; 
-            slowPlayerOn = g.t + 200;
+            for(var item of g.enemies){
+                var x = Math.random() < 0.5 ? 10 : WIDTH-10;
+                var y = Math.random() < 0.5 ? 10 : HEIGHT-10;
+                item.x = x;
+                item.y = y;
+                if(item.type == "transforming"){
+                    for(var j of item.behaviors){
+                        j[1].x = x;
+                        j[1].y = y;
+                    }
+                }
+            }
             upgrades[1] = false;
         }
         if(e == "e" && upgrades[2]){
             g.last_hit = g.t + 200;
             upgrades[2] = false; 
         }
-        if(e == "r" && upgrades[3]){
+        if(e == "r" && upgrades[3] && g.progress !== "completed"){
             g.progress = "completed";
             upgrades[3] = false; 
         }
@@ -272,6 +282,7 @@ function GameDisplay({data, return_fn, player, upgrades} : {data : levelData[], 
         <BgImg img={Math.random() > 0.5 ? "images/background.png" : "images/background2.png"}/>
         <canvas width={WIDTH} height={100} id="lowerCanvas" style={{position:"absolute", top:0, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={upperCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
         <canvas tabIndex={0} width={WIDTH} height={HEIGHT} id="lowerCanvas" style={{position:"absolute", top:100, left:0, zIndex:0, border:"1px solid black"}}  onMouseMove={mouseMove}  ref={lowerCanvas} onKeyDown={(e) => handlePress(e.key.toLowerCase())}/>
+        <button onClick={() => setLose(true)} style={{position:"absolute", top:50, left:WIDTH-100, width:100,height:50, border:"1px solid black",zIndex:1}} > Give up </button>
     </>
 }
 
